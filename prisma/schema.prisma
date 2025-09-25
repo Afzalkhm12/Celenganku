@@ -1,0 +1,120 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id             String        @id @default(uuid()) @db.Uuid
+  email          String        @unique @db.VarChar(255)
+  name           String?       @db.VarChar(255)
+  password_hash  String        @db.Text
+  created_at     DateTime      @default(now()) @db.Timestamptz(3)
+  updated_at     DateTime      @updatedAt @db.Timestamptz(3)
+  accounts       Account[]
+  categories     Category[]
+  budgets        Budget[]
+  financialGoals FinancialGoal[]
+}
+
+model Account {
+  id                    String                 @id @default(uuid()) @db.Uuid
+  user_id               String                 @db.Uuid
+  name                  String                 @db.VarChar(255)
+  type                  String                 @db.VarChar(50)
+  balance               Decimal                @default(0.00) @db.Decimal(15, 2)
+  created_at            DateTime               @default(now()) @db.Timestamptz(3)
+  updated_at            DateTime               @updatedAt @db.Timestamptz(3)
+  user                  User                   @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  transactions          Transaction[]
+  recurringTransactions RecurringTransaction[]
+}
+
+model Category {
+  id                    String                 @id @default(uuid()) @db.Uuid
+  user_id               String                 @db.Uuid
+  name                  String                 @db.VarChar(255)
+  type                  String                 @db.VarChar(50) // 'INCOME' or 'EXPENSE'
+  created_at            DateTime               @default(now()) @db.Timestamptz(3)
+  updated_at            DateTime               @updatedAt @db.Timestamptz(3)
+  user                  User                   @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  transactions          Transaction[]
+  budgets               Budget[]
+  recurringTransactions RecurringTransaction[]
+
+  @@unique([user_id, name])
+}
+
+model Transaction {
+  id               String   @id @default(uuid()) @db.Uuid
+  account_id       String   @db.Uuid
+  category_id      String   @db.Uuid
+  amount           Decimal  @db.Decimal(15, 2)
+  type             String   @db.VarChar(50) // 'INCOME' or 'EXPENSE'
+  description      String?  @db.Text
+  transaction_date DateTime @db.Timestamptz(3)
+  created_at       DateTime @default(now()) @db.Timestamptz(3)
+  updated_at       DateTime @updatedAt @db.Timestamptz(3)
+  account          Account  @relation(fields: [account_id], references: [id], onDelete: Cascade)
+  category         Category @relation(fields: [category_id], references: [id], onDelete: Restrict)
+}
+
+model Budget {
+  id          String   @id @default(uuid()) @db.Uuid
+  user_id     String   @db.Uuid
+  category_id String   @db.Uuid
+  amount      Decimal  @db.Decimal(15, 2)
+  month       Int
+  year        Int
+  created_at  DateTime @default(now()) @db.Timestamptz(3)
+  updated_at  DateTime @updatedAt @db.Timestamptz(3)
+  user        User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  category    Category @relation(fields: [category_id], references: [id], onDelete: Cascade)
+
+  @@unique([user_id, category_id, year, month])
+}
+
+model FinancialGoal {
+  id             String    @id @default(uuid()) @db.Uuid
+  user_id        String    @db.Uuid
+  name           String    @db.VarChar(255)
+  target_amount  Decimal   @db.Decimal(15, 2)
+  current_amount Decimal   @default(0.00) @db.Decimal(15, 2)
+  target_date    DateTime? @db.Date
+  created_at     DateTime  @default(now()) @db.Timestamptz(3)
+  updated_at     DateTime  @updatedAt @db.Timestamptz(3)
+  user           User      @relation(fields: [user_id], references: [id], onDelete: Cascade)
+}
+
+model RecurringTransaction {
+  id                   String    @id @default(uuid()) @db.Uuid
+  account_id           String    @db.Uuid
+  category_id          String    @db.Uuid
+  amount               Decimal   @db.Decimal(15, 2)
+  type                 String    @db.VarChar(50) // 'INCOME' or 'EXPENSE'
+  description          String?   @db.Text
+  frequency            String    @db.VarChar(50) // e.g., 'DAILY', 'WEEKLY', 'MONTHLY'
+  start_date           DateTime  @db.Date
+  end_date             DateTime? @db.Date
+  next_occurrence_date DateTime  @db.Date
+  created_at           DateTime  @default(now()) @db.Timestamptz(3)
+  updated_at           DateTime  @updatedAt @db.Timestamptz(3)
+  account              Account   @relation(fields: [account_id], references: [id], onDelete: Cascade)
+  category             Category  @relation(fields: [category_id], references: [id], onDelete: Cascade)
+}
+
+model FinancialTip {
+  id       String @id @default(uuid()) @db.Uuid
+  tip_text String @db.Text
+  category String @db.VarChar(50) // e.g., 'SAVING', 'BUDGETING', 'INVESTING', 'DEBT'
+}
