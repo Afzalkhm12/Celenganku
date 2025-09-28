@@ -45,7 +45,8 @@ model Category {
   budgets               Budget[]
   recurringTransactions RecurringTransaction[]
 
-  @@unique([user_id, name])
+
+  @@unique([user_id, name, type])
 }
 
 model Transaction {

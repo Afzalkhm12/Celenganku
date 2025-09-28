@@ -15,7 +15,7 @@
 ## 🚀 Live Demo
 
 Rasakan pengalaman mengelola keuangan yang intuitif dan modern.
-**Kunjungi Live Demo: [Link Deployment Vercel Anda di Sini]**
+**Kunjungi Live Demo: https://celenganku-omega.vercel.app/**
 
 ---
 
@@ -71,22 +71,6 @@ Sesuai tujuan proyek, AI **tidak diintegrasikan sebagai fitur live**, melainkan 
     * **Dampak:** **Mengurangi waktu penulisan kode berulang hingga 40%**, memungkinkan fokus lebih pada aspek fungsionalitas dan pengalaman pengguna.
 
 Secara keseluruhan, IBM Granite bukan hanya penulis kode, tetapi juga mitra *sparring* untuk ide, *debugger*, dan akselerator yang memungkinkan proyek ini diselesaikan dengan standar yang lebih tinggi dalam waktu yang lebih singkat.
-
----
-
-## 📸 Galeri "Celengan.ku"
-
-*Sebuah gambar bisa menceritakan seribu kata. Berikut adalah beberapa cuplikan dari Celengan.ku.*
-
-*(Tips: Gunakan GIF untuk mendemonstrasikan alur kerja, misal saat menambah transaksi)*
-
-| Dasbor Utama | Halaman Tujuan Finansial |
-| :---: | :---: |
-| ![Dashboard]([LINK_SCREENSHOT_DASBOR_ANDA_DI_SINI]) | ![Goals]([LINK_SCREENSHOT_GOALS_ANDA_DI_SINI]) |
-
-| Halaman Anggaran | Tampilan Mobile |
-| :---: | :---: |
-| ![Budget]([LINK_SCREENSHOT_BUDGET_ANDA_DI_SINI]) | ![Mobile View]([LINK_SCREENSHOT_MOBILE_ANDA_DI_SINI]) |
 
 ---
 

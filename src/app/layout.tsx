@@ -19,7 +19,10 @@ export default async function RootLayout({
   children: React.ReactNode;
 }) {
   const session = await auth();
-  const pathname = (await headers()).get('x-next-pathname') || '';
+  
+  // Perbaikan: Gunakan 'await' untuk menyelesaikan Promise sebelum memanggil .get()
+  const headersList = await headers();
+  const pathname = headersList.get('x-next-pathname') || '';
 
   const publicPages = ['/', '/login', '/register'];
   const isPublicPage = publicPages.includes(pathname);

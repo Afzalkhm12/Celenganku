@@ -20,14 +20,11 @@ import { LoadingSpinner } from '../ui/LoadingSpinner';
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#AF19FF', '#FF1943'];
 const formatCurrency = (amount: number) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(amount);
 
-// FIX: Definisikan tipe data yang lebih spesifik untuk state
 interface ChartData {
   pieChartData: { name: string; value: number }[];
   barChartData: { name: string; Pemasukan: number; Pengeluaran: number }[];
 }
 
-// FIX: Gunakan 'any' untuk props. Ini adalah cara umum untuk mengatasi
-// tipe Recharts yang kompleks dan akan menyelesaikan error build Anda.
 const renderCustomizedLabel = (props: any) => {
   const { cx, cy, midAngle, innerRadius, outerRadius, percent } = props;
   if (percent === 0) return null;
@@ -104,7 +101,6 @@ export default function DashboardCharts() {
                   fill="#8884d8"
                   dataKey="value"
                   labelLine={false}
-                  // FIX: Gunakan fungsi render yang sudah dibuat di luar
                   label={renderCustomizedLabel}
                 >
                     {data.pieChartData.map((_entry, index) => (

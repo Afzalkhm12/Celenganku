@@ -37,7 +37,6 @@ export async function GET() {
                 });
 
                 const currentNextDate = new Date(recurring.next_occurrence_date);
-                // FIX: Gunakan 'const' karena tidak di-reassign
                 const newNextDate = new Date(currentNextDate);
                 
                 switch (recurring.frequency) {

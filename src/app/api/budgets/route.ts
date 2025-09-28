@@ -33,10 +33,12 @@ export async function GET(request: Request) {
     
     const spentMap = new Map(transactionsSum.map(t => [t.category_id, t._sum.amount?.toNumber() ?? 0]));
 
+    // Convert Decimal to number before sending the response
     const result = categories.map(cat => ({
       ...cat,
+      budgets: cat.budgets.map(b => ({ ...b, amount: b.amount.toNumber() })),
       spent: spentMap.get(cat.id) ?? 0
-    }))
+    }));
 
     return NextResponse.json(result);
   } catch (error) {
@@ -68,8 +70,14 @@ export async function POST(request: Request) {
       update: { amount },
       create: { user_id: userId, category_id: categoryId, amount, month, year },
     });
+    
+    // Convert Decimal to number in the response
+    const serializableBudget = {
+      ...budget,
+      amount: budget.amount.toNumber(),
+    };
 
-    return NextResponse.json(budget);
+    return NextResponse.json(serializableBudget);
   } catch (error) {
     console.error('[BUDGETS_POST]', error);
     return new NextResponse('Internal Server Error', { status: 500 });

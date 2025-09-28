@@ -2,15 +2,23 @@ import { auth } from '../../auth';
 import { redirect } from 'next/navigation';
 import prisma from '../../lib/prisma';
 import DashboardClient from '../../components/dashboard/DashboardClient';
-import { type Account, type Category, type Transaction } from '@prisma/client';
+import { type Account as PrismaAccount, type Category, type Transaction as PrismaTransaction } from '@prisma/client';
+
+// --- PERBAIKAN DI SINI: Tambahkan 'export' ---
+export type SerializableAccount = Omit<PrismaAccount, 'balance'> & { balance: number };
+type SerializableTransaction = Omit<PrismaTransaction, 'amount'> & { 
+  amount: number;
+  category: { name: string };
+  account: { name: string };
+};
 
 export type DashboardData = {
   totalIncome: number;
   totalExpenses: number;
   savings: number;
-  accounts: Account[];
+  accounts: SerializableAccount[];
   categories: Category[];
-  recentTransactions: (Transaction & { category: { name: string }, account: { name: string } })[];
+  recentTransactions: SerializableTransaction[];
   insights: { variant: 'positive' | 'warning' | 'info'; text: string }[];
   userName: string | null | undefined;
 };
@@ -80,13 +88,23 @@ export default async function DashboardPage() {
     }
   }
 
+  const serializableAccounts = accounts.map(account => ({
+    ...account,
+    balance: account.balance.toNumber(),
+  }));
+
+  const serializableTransactions = transactions.map(tx => ({
+    ...tx,
+    amount: tx.amount.toNumber(),
+  }));
+
   const dashboardData: DashboardData = {
     totalIncome,
     totalExpenses,
     savings,
-    accounts,
+    accounts: serializableAccounts,
     categories,
-    recentTransactions: transactions.slice(0, 5),
+    recentTransactions: serializableTransactions.slice(0, 5),
     insights,
     userName: session.user.name,
   };

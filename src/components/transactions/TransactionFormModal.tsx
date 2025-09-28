@@ -6,13 +6,17 @@ import { Input } from '../ui/Input';
 import { Button } from '../ui/Button';
 import { useAppToast } from '../../hooks/useAppToast';
 import { LoadingSpinner } from '../ui/LoadingSpinner';
-import type { Account, Category } from '@prisma/client';
+// --- PERBAIKAN DI SINI ---
+import { type Category } from '@prisma/client';
+// Impor tipe baru dari dashboard/page.tsx
+import { type SerializableAccount } from '../../app/dashboard/page';
 
 interface TransactionFormModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess: () => void;
-  accounts: Account[];
+  // Gunakan tipe SerializableAccount
+  accounts: SerializableAccount[];
   categories: Category[];
 }
 
@@ -26,21 +30,21 @@ export default function TransactionFormModal({ isOpen, onClose, onSuccess, accou
     const [isLoading, setIsLoading] = React.useState(false);
     const toast = useAppToast();
 
-    const filteredCategories = categories.filter(c => c.type === type);
+    const filteredCategories = React.useMemo(() => categories.filter(c => c.type === type), [categories, type]);
 
     React.useEffect(() => {
         if (isOpen) {
-            if (filteredCategories.length > 0 && (!categoryId || !filteredCategories.find(c => c.id === categoryId))) {
-              setCategoryId(filteredCategories[0].id);
-            } else if (filteredCategories.length === 0) {
-              setCategoryId('');
+            if (filteredCategories.length > 0) {
+                setCategoryId(filteredCategories[0].id);
+            } else {
+                setCategoryId(''); 
             }
     
             if (accounts.length > 0 && !accountId) {
                 setAccountId(accounts[0].id);
             }
         }
-      }, [type, isOpen, accounts, categories, categoryId, filteredCategories, accountId]); // FIX: Tambahkan dependensi yang hilang
+    }, [type, isOpen, accounts, filteredCategories]);
 
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -69,7 +73,7 @@ export default function TransactionFormModal({ isOpen, onClose, onSuccess, accou
                 toast.error(errorData || 'Gagal menambahkan transaksi.');
               }
         } catch (error) {
-            console.error(error); // FIX: Gunakan 'error'
+            console.error(error);
             toast.error('Terjadi kesalahan yang tidak terduga.');
         } finally {
             setIsLoading(false);
@@ -78,7 +82,7 @@ export default function TransactionFormModal({ isOpen, onClose, onSuccess, accou
     
     return (
         <Modal isOpen={isOpen} onClose={onClose} title="Tambah Transaksi Baru">
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-6">
             <div className="flex rounded-md shadow-sm">
               <button
                 type="button"
@@ -97,41 +101,69 @@ export default function TransactionFormModal({ isOpen, onClose, onSuccess, accou
             </div>
     
             <div>
-              <label htmlFor="amount" className="block text-sm font-medium text-gray-700">Jumlah</label>
+              <label htmlFor="amount" className="block text-sm font-medium text-gray-700 mb-1">
+                Jumlah
+              </label>
               <Input id="amount" type="number" value={amount} onChange={e => setAmount(e.target.value)} placeholder="0" required />
             </div>
             
             <div>
-                <label htmlFor="category" className="block text-sm font-medium text-gray-700">Kategori</label>
-                <select id="category" value={categoryId} onChange={e => setCategoryId(e.target.value)} required className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md">
+                <label htmlFor="category" className="block text-sm font-medium text-gray-700 mb-1">
+                  Kategori {type === 'INCOME' ? 'Pemasukan' : 'Pengeluaran'}
+                </label>
+                <p className="text-xs text-gray-500 mb-2">Untuk mengelompokkan jenis transaksi Anda (e.g., Makanan, Gaji).</p>
+                <select 
+                  id="category" 
+                  value={categoryId} 
+                  onChange={e => setCategoryId(e.target.value)} 
+                  required 
+                  className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
+                >
                     {filteredCategories.length > 0 ? (
                         filteredCategories.map(cat => <option key={cat.id} value={cat.id}>{cat.name}</option>)
                     ) : (
-                        <option disabled value="">Tidak ada kategori {type === 'INCOME' ? 'pemasukan' : 'pengeluaran'}</option>
+                        <option disabled value="">
+                          Tidak ada kategori untuk tipe ini.
+                        </option>
                     )}
                 </select>
             </div>
     
             <div>
-                <label htmlFor="account" className="block text-sm font-medium text-gray-700">Akun</label>
-                 <select id="account" value={accountId} onChange={e => setAccountId(e.target.value)} required className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md">
-                    {accounts.map(acc => <option key={acc.id} value={acc.id}>{acc.name} ({acc.type})</option>)}
+                <label htmlFor="account" className="block text-sm font-medium text-gray-700 mb-1">
+                  {type === 'INCOME' ? 'Masuk ke Akun' : 'Diambil dari Akun'}
+                </label>
+                <p className="text-xs text-gray-500 mb-2">Sumber atau tujuan dana (e.g., Rekening Bank, E-Wallet, Dompet).</p>
+                 <select 
+                   id="account" 
+                   value={accountId} 
+                   onChange={e => setAccountId(e.target.value)} 
+                   required 
+                   className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
+                 >
+                    {accounts.length > 0 ? (
+                        accounts.map(acc => <option key={acc.id} value={acc.id}>{acc.name}</option>)
+                    ) : (
+                        <option disabled value="">
+                          Anda belum memiliki akun.
+                        </option>
+                    )}
                 </select>
             </div>
             
             <div>
-                <label htmlFor="date" className="block text-sm font-medium text-gray-700">Tanggal</label>
+                <label htmlFor="date" className="block text-sm font-medium text-gray-700 mb-1">Tanggal</label>
                 <Input id="date" type="date" value={transactionDate} onChange={e => setTransactionDate(e.target.value)} required />
             </div>
     
             <div>
-                <label htmlFor="description" className="block text-sm font-medium text-gray-700">Deskripsi (Opsional)</label>
-                <Input id="description" type="text" value={description} onChange={e => setDescription(e.target.value)} placeholder="Makan siang" />
+                <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">Deskripsi (Opsional)</label>
+                <Input id="description" type="text" value={description} onChange={e => setDescription(e.target.value)} placeholder="Contoh: Makan siang di warung" />
             </div>
     
             <div className="flex justify-end pt-4">
               <Button type="button" variant="ghost" onClick={onClose} disabled={isLoading}>Batal</Button>
-              <Button type="submit" className="ml-2" disabled={isLoading || !categoryId}>
+              <Button type="submit" className="ml-2" disabled={isLoading || !categoryId || !accountId}>
                 {isLoading ? <LoadingSpinner size="sm" color="light" /> : 'Simpan'}
               </Button>
             </div>

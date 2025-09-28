@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
 import { auth } from '../../../auth';
 import prisma from '../../../lib/prisma';
-// FIX: Impor namespace Prisma langsung dari @prisma/client
 import { Prisma } from '@prisma/client';
 
 export async function POST(request: Request) {
@@ -23,7 +22,6 @@ export async function POST(request: Request) {
         return new NextResponse('Invalid amount provided', { status: 400 });
     }
 
-    // FIX: Berikan tipe eksplisit pada parameter 'tx' untuk menghilangkan error 'any'
     const result = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       const newTransaction = await tx.transaction.create({
         data: {
