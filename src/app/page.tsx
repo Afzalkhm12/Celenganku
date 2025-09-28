@@ -1,102 +1,113 @@
-import Image from "next/image";
+import Link from 'next/link';
+import { PiggyBank, BarChart, Target, Zap } from 'lucide-react';
+import { Button } from '../components/ui/Button';
 
-export default function Home() {
+export default function LandingPage() {
   return (
-    <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="font-mono list-inside list-decimal text-sm/6 text-center sm:text-left">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] font-mono font-semibold px-1 py-0.5 rounded">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
-
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+    <div className="flex flex-col min-h-screen bg-white text-gray-800 font-sans">
+      {/* Header */}
+      <header className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-md shadow-sm">
+        <div className="container mx-auto px-6 py-4 flex justify-between items-center">
+          <Link href="/" className="flex items-center space-x-2">
+            <PiggyBank className="h-8 w-8 text-blue-600" />
+            <span className="text-2xl font-bold text-gray-800">Celengan.ku</span>
+          </Link>
+          <nav className="hidden md:flex items-center space-x-6">
+            <a href="#features" className="text-gray-600 hover:text-blue-600 transition">Fitur</a>
+            <a href="#how-it-works" className="text-gray-600 hover:text-blue-600 transition">Cara Kerja</a>
+            <a href="#benefits" className="text-gray-600 hover:text-blue-600 transition">Manfaat</a>
+          </nav>
+          <div className="flex items-center space-x-2 sm:space-x-4">
+            <Link href="/login">
+              <Button variant="ghost" size="sm">Masuk</Button>
+            </Link>
+            <Link href="/register">
+              <Button size="sm">Daftar Gratis</Button>
+            </Link>
+          </div>
         </div>
+      </header>
+
+      <main className="flex-1">
+        {/* Hero Section */}
+        <section className="bg-blue-50 pt-32 pb-20 text-center">
+          <div className="container mx-auto px-6">
+            <h1 className="text-4xl md:text-6xl font-extrabold text-gray-900 leading-tight">
+              Kelola Keuangan Pribadi, <br className="hidden sm:block" /> Raih Tujuan Finansial Anda.
+            </h1>
+            <p className="mt-6 text-lg md:text-xl text-gray-600 max-w-3xl mx-auto">
+              Celengan.ku adalah cara cerdas dan sederhana untuk melacak pengeluaran, membuat anggaran, dan menabung untuk masa depan impian Anda.
+            </p>
+            <div className="mt-10">
+              <Link href="/register">
+                <Button size="lg" className="shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-transform duration-300">
+                  Mulai Gratis Sekarang <Zap className="ml-2 h-5 w-5" />
+                </Button>
+              </Link>
+            </div>
+          </div>
+        </section>
+
+        {/* Features Section */}
+        <section id="features" className="py-20">
+          <div className="container mx-auto px-6">
+            <div className="text-center mb-12">
+              <h2 className="text-3xl md:text-4xl font-bold text-gray-800">Fitur Cerdas untuk Anda</h2>
+              <p className="mt-4 text-gray-600">Semua yang Anda butuhkan dalam satu aplikasi.</p>
+            </div>
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+              <div className="bg-gray-50 p-8 rounded-lg text-center transform hover:scale-105 transition-transform duration-300">
+                <BarChart className="h-12 w-12 text-blue-600 mx-auto mb-4" />
+                <h3 className="text-xl font-semibold mb-2">Dasbor Intuitif</h3>
+                <p className="text-gray-600">Lihat ringkasan pemasukan, pengeluaran, dan tabungan Anda dalam sekejap.</p>
+              </div>
+              <div className="bg-gray-50 p-8 rounded-lg text-center transform hover:scale-105 transition-transform duration-300">
+                <Target className="h-12 w-12 text-blue-600 mx-auto mb-4" />
+                <h3 className="text-xl font-semibold mb-2">Anggaran Fleksibel</h3>
+                <p className="text-gray-600">Atur batas pengeluaran bulanan untuk setiap kategori dan pantau kemajuannya.</p>
+              </div>
+              <div className="bg-gray-50 p-8 rounded-lg text-center transform hover:scale-105 transition-transform duration-300">
+                <PiggyBank className="h-12 w-12 text-blue-600 mx-auto mb-4" />
+                <h3 className="text-xl font-semibold mb-2">Celengan Digital</h3>
+                <p className="text-gray-600">Buat tujuan tabungan, seperti liburan atau dana darurat, dan lihat progres Anda.</p>
+              </div>
+            </div>
+          </div>
+        </section>
+        
+        {/* How It Works Section */}
+        <section id="how-it-works" className="py-20 bg-blue-50">
+          <div className="container mx-auto px-6">
+            <div className="text-center mb-12">
+              <h2 className="text-3xl md:text-4xl font-bold text-gray-800">Mulai dalam 3 Langkah Mudah</h2>
+            </div>
+            <div className="flex flex-col md:flex-row justify-center items-center gap-8 md:gap-16">
+              <div className="text-center max-w-xs">
+                <div className="bg-blue-600 text-white rounded-full h-16 w-16 flex items-center justify-center text-2xl font-bold mx-auto mb-4">1</div>
+                <h3 className="text-xl font-semibold mb-2">Daftar Akun</h3>
+                <p className="text-gray-600">Buat akun gratis Anda dalam hitungan detik.</p>
+              </div>
+               <div className="text-center max-w-xs">
+                <div className="bg-blue-600 text-white rounded-full h-16 w-16 flex items-center justify-center text-2xl font-bold mx-auto mb-4">2</div>
+                <h3 className="text-xl font-semibold mb-2">Catat Transaksi</h3>
+                <p className="text-gray-600">Mulai catat pemasukan dan pengeluaran harian Anda.</p>
+              </div>
+               <div className="text-center max-w-xs">
+                <div className="bg-blue-600 text-white rounded-full h-16 w-16 flex items-center justify-center text-2xl font-bold mx-auto mb-4">3</div>
+                <h3 className="text-xl font-semibold mb-2">Dapatkan Insight</h3>
+                <p className="text-gray-600">Lihat laporan dan dapatkan tips cerdas untuk keuangan lebih baik.</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
       </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
+
+      {/* Footer */}
+      <footer className="bg-gray-800 text-white py-8">
+        <div className="container mx-auto px-6 text-center">
+          <p>&copy; {new Date().getFullYear()} Celengan.ku. Semua Hak Cipta Dilindungi.</p>
+        </div>
       </footer>
     </div>
   );

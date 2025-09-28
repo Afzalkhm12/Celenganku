@@ -1,68 +1,66 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
 import * as React from 'react';
-import { BarChart, Bar, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell, Sector } from 'recharts';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
-import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
+import { 
+  BarChart, 
+  Bar, 
+  XAxis, 
+  YAxis, 
+  Tooltip, 
+  Legend, 
+  ResponsiveContainer, 
+  PieChart, 
+  Pie, 
+  Cell 
+} from 'recharts';
+import { Card, CardContent, CardHeader, CardTitle } from '../ui/Card';
+import { LoadingSpinner } from '../ui/LoadingSpinner';
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#AF19FF', '#FF1943'];
-const formatCurrency = (amount: number) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(amount);
+const formatCurrency = (amount: number) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(amount);
 
-const renderActiveShape = (props: any) => {
-  const RADIAN = Math.PI / 180;
-  const { cx, cy, midAngle, innerRadius, outerRadius, startAngle, endAngle, fill, payload, percent, value } = props;
-  const sin = Math.sin(-RADIAN * midAngle);
-  const cos = Math.cos(-RADIAN * midAngle);
-  const sx = cx + (outerRadius + 10) * cos;
-  const sy = cy + (outerRadius + 10) * sin;
-  const mx = cx + (outerRadius + 30) * cos;
-  const my = cy + (outerRadius + 30) * sin;
-  const ex = mx + (cos >= 0 ? 1 : -1) * 22;
-  const ey = my;
-  const textAnchor = cos >= 0 ? 'start' : 'end';
+// FIX: Definisikan tipe data yang lebih spesifik untuk state
+interface ChartData {
+  pieChartData: { name: string; value: number }[];
+  barChartData: { name: string; Pemasukan: number; Pengeluaran: number }[];
+}
+
+// FIX: Gunakan 'any' untuk props. Ini adalah cara umum untuk mengatasi
+// tipe Recharts yang kompleks dan akan menyelesaikan error build Anda.
+const renderCustomizedLabel = (props: any) => {
+  const { cx, cy, midAngle, innerRadius, outerRadius, percent } = props;
+  if (percent === 0) return null;
+  
+  const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
+  const x = cx + radius * Math.cos(-midAngle * (Math.PI / 180));
+  const y = cy + radius * Math.sin(-midAngle * (Math.PI / 180));
 
   return (
-    <g>
-      <text x={cx} y={cy} dy={8} textAnchor="middle" fill={fill}>
-        {payload.name}
-      </text>
-      <Sector
-        cx={cx}
-        cy={cy}
-        innerRadius={innerRadius}
-        outerRadius={outerRadius}
-        startAngle={startAngle}
-        endAngle={endAngle}
-        fill={fill}
-      />
-      <Sector
-        cx={cx}
-        cy={cy}
-        startAngle={startAngle}
-        endAngle={endAngle}
-        innerRadius={outerRadius + 6}
-        outerRadius={outerRadius + 10}
-        fill={fill}
-      />
-      <path d={`M${sx},${sy}L${mx},${my}L${ex},${ey}`} stroke={fill} fill="none" />
-      <circle cx={ex} cy={ey} r={2} fill={fill} stroke="none" />
-      <text x={ex + (cos >= 0 ? 1 : -1) * 12} y={ey} textAnchor={textAnchor} fill="#333">{formatCurrency(value)}</text>
-      <text x={ex + (cos >= 0 ? 1 : -1) * 12} y={ey} dy={18} textAnchor={textAnchor} fill="#999">
-        {`( ${(percent * 100).toFixed(2)}%)`}
-      </text>
-    </g>
+    <text
+      x={x}
+      y={y}
+      fill="white"
+      textAnchor={x > cx ? 'start' : 'end'}
+      dominantBaseline="central"
+      fontSize={12}
+      fontWeight="bold"
+    >
+      {`${(percent * 100).toFixed(0)}%`}
+    </text>
   );
 };
 
+
 export default function DashboardCharts() {
-  const [data, setData] = React.useState<{ pieChartData: any[]; barChartData: any[] } | null>(null);
+  const [data, setData] = React.useState<ChartData | null>(null);
   const [isLoading, setIsLoading] = React.useState(true);
-  const [activeIndex, setActiveIndex] = React.useState(0);
 
   React.useEffect(() => {
     const fetchData = async () => {
       try {
         const response = await fetch('/api/charts');
+        if (!response.ok) throw new Error('Network response was not ok');
         const result = await response.json();
         setData(result);
       } catch (error) {
@@ -72,10 +70,6 @@ export default function DashboardCharts() {
       }
     };
     fetchData();
-  }, []);
-
-  const onPieEnter = React.useCallback((_: any, index: number) => {
-    setActiveIndex(index);
   }, []);
   
   if (isLoading) {
@@ -100,9 +94,8 @@ export default function DashboardCharts() {
           {data.pieChartData.length > 0 ? (
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
+                <Tooltip formatter={(value: number, name: string) => [formatCurrency(value), name]}/>
                 <Pie
-                  activeIndex={activeIndex}
-                  activeShape={renderActiveShape}
                   data={data.pieChartData}
                   cx="50%"
                   cy="50%"
@@ -110,12 +103,15 @@ export default function DashboardCharts() {
                   outerRadius={80}
                   fill="#8884d8"
                   dataKey="value"
-                  onMouseEnter={onPieEnter}
+                  labelLine={false}
+                  // FIX: Gunakan fungsi render yang sudah dibuat di luar
+                  label={renderCustomizedLabel}
                 >
-                    {data.pieChartData.map((entry, index) => (
+                    {data.pieChartData.map((_entry, index) => (
                         <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                     ))}
                 </Pie>
+                <Legend />
               </PieChart>
             </ResponsiveContainer>
           ) : (

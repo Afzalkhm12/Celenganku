@@ -31,14 +31,15 @@ export default function RegisterPage() {
       });
 
       if (response.ok) {
-        toast.success('Registration successful! Please login.');
+        toast.success('Registrasi berhasil! Silakan login.');
         router.push('/login');
       } else {
         const errorData = await response.text();
-        toast.error(errorData || 'Registration failed. Please try again.');
+        toast.error(errorData || 'Registrasi gagal. Silakan coba lagi.');
       }
     } catch (error) {
-      toast.error('An unexpected error occurred.');
+      console.error(error);
+      toast.error('Terjadi kesalahan yang tidak terduga.');
     } finally {
       setIsLoading(false);
     }
@@ -46,19 +47,19 @@ export default function RegisterPage() {
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-50">
-      <Card className="w-full max-w-md">
+      <Card className="w-full max-w-md mx-4">
         <CardHeader className="text-center">
-          <CardTitle className="text-2xl">Create an Account</CardTitle>
-          <CardDescription>Start managing your finances with Celengan.ku</CardDescription>
+          <CardTitle className="text-2xl">Buat Akun Baru</CardTitle>
+          <CardDescription>Mulai kelola keuangan Anda hari ini</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
-             <div className="space-y-2">
-              <label htmlFor="name">Name</label>
+            <div className="space-y-2">
+              <label htmlFor="name">Nama</label>
               <Input
                 id="name"
                 type="text"
-                placeholder="Your Name"
+                placeholder="Nama Anda"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 required
@@ -70,7 +71,7 @@ export default function RegisterPage() {
               <Input
                 id="email"
                 type="email"
-                placeholder="you@example.com"
+                placeholder="anda@contoh.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
@@ -78,7 +79,7 @@ export default function RegisterPage() {
               />
             </div>
             <div className="space-y-2">
-              <label htmlFor="password">Password</label>
+              <label htmlFor="password">Kata Sandi</label>
               <Input
                 id="password"
                 type="password"
@@ -90,15 +91,15 @@ export default function RegisterPage() {
               />
             </div>
             <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? <LoadingSpinner size="sm" color="light" /> : 'Register'}
+              {isLoading ? <LoadingSpinner size="sm" color="light" /> : 'Daftar'}
             </Button>
           </form>
         </CardContent>
-        <CardFooter className="text-center text-sm">
+        <CardFooter className="flex justify-center text-sm">
           <p>
-            Already have an account?{' '}
+            Sudah punya akun?{' '}
             <Link href="/login" className="text-blue-600 hover:underline">
-              Login here
+              Masuk di sini
             </Link>
           </p>
         </CardFooter>
@@ -106,4 +107,3 @@ export default function RegisterPage() {
     </div>
   );
 }
-

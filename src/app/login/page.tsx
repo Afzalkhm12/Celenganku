@@ -30,19 +30,19 @@ export default function LoginPage() {
     setIsLoading(false);
 
     if (result?.error) {
-      toast.error('Login failed. Please check your credentials.');
+      toast.error('Login gagal. Silakan periksa kembali email dan kata sandi Anda.');
     } else {
-      toast.success('Login successful!');
-      router.push('/'); // Redirect to dashboard after successful login
+      toast.success('Login berhasil!');
+      router.push('/dashboard'); 
     }
   };
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-50">
-      <Card className="w-full max-w-md">
+      <Card className="w-full max-w-md mx-4">
         <CardHeader className="text-center">
-          <CardTitle className="text-2xl">Welcome Back!</CardTitle>
-          <CardDescription>Sign in to continue to Celengan.ku</CardDescription>
+          <CardTitle className="text-2xl">Selamat Datang Kembali!</CardTitle>
+          <CardDescription>Masuk untuk melanjutkan ke Celengan.ku</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -51,7 +51,7 @@ export default function LoginPage() {
               <Input
                 id="email"
                 type="email"
-                placeholder="you@example.com"
+                placeholder="anda@contoh.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
@@ -59,7 +59,7 @@ export default function LoginPage() {
               />
             </div>
             <div className="space-y-2">
-              <label htmlFor="password">Password</label>
+              <label htmlFor="password">Kata Sandi</label>
               <Input
                 id="password"
                 type="password"
@@ -71,15 +71,15 @@ export default function LoginPage() {
               />
             </div>
             <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? <LoadingSpinner size="sm" color="light" /> : 'Login'}
+              {isLoading ? <LoadingSpinner size="sm" color="light" /> : 'Masuk'}
             </Button>
           </form>
         </CardContent>
-        <CardFooter className="text-center text-sm">
+        <CardFooter className="flex justify-center text-sm">
           <p>
-            Don&apos;t have an account?{' '}
+            Belum punya akun?{' '}
             <Link href="/register" className="text-blue-600 hover:underline">
-              Register here
+              Daftar di sini
             </Link>
           </p>
         </CardFooter>
@@ -87,4 +87,3 @@ export default function LoginPage() {
     </div>
   );
 }
-

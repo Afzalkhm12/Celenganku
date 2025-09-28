@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
-import { auth } from '@/auth';
-import prisma from '@/lib/prisma';
+import { auth } from '../../../auth';
+import prisma from '../../../lib/prisma';
 
 export async function GET(request: Request) {
   const session = await auth();
@@ -16,14 +16,6 @@ export async function GET(request: Request) {
       where: { user_id: userId, type: 'EXPENSE' },
       include: {
         budgets: { where: { year, month } },
-        _count: {
-          select: {
-            transactions: { where: { transaction_date: { 
-              gte: new Date(year, month - 1, 1), 
-              lt: new Date(year, month, 1) 
-            }}}
-          }
-        }
       },
     });
 
@@ -48,10 +40,10 @@ export async function GET(request: Request) {
 
     return NextResponse.json(result);
   } catch (error) {
+    console.error('[BUDGETS_GET]', error);
     return new NextResponse('Internal Server Error', { status: 500 });
   }
 }
-
 
 export async function POST(request: Request) {
   const session = await auth();
@@ -79,6 +71,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json(budget);
   } catch (error) {
+    console.error('[BUDGETS_POST]', error);
     return new NextResponse('Internal Server Error', { status: 500 });
   }
 }

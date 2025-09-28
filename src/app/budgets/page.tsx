@@ -1,19 +1,26 @@
 'use client';
 
 import * as React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
-import { Button } from '@/components/ui/Button';
-import { Input } from '@/components/ui/Input';
-import { useAppToast } from '@/hooks/useAppToast';
-import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
+import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/Card';
+import { Button } from '../../components/ui/Button';
+import { Input } from '../../components/ui/Input';
+import { useAppToast } from '../../hooks/useAppToast';
+import { LoadingSpinner } from '../../components/ui/LoadingSpinner';
+import { Budget, Category } from '@prisma/client';
+
+// FIX: Definisikan tipe data yang lebih spesifik
+type CategoryWithBudget = Category & {
+    budgets: Budget[];
+    spent: number;
+};
 
 const formatCurrency = (amount: number) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(amount);
 
 export default function BudgetsPage() {
-    const [budgets, setBudgets] = React.useState<any[]>([]);
+    const [budgetsData, setBudgetsData] = React.useState<CategoryWithBudget[]>([]);
     const [isLoading, setIsLoading] = React.useState(true);
     const toast = useAppToast();
-    const [date, setDate] = React.useState({
+    const [date] = React.useState({ // FIX: Hapus 'setDate' yang tidak digunakan
         month: new Date().getMonth() + 1,
         year: new Date().getFullYear(),
     });
@@ -23,8 +30,9 @@ export default function BudgetsPage() {
         try {
             const response = await fetch(`/api/budgets?month=${month}&year=${year}`);
             const data = await response.json();
-            setBudgets(data);
+            setBudgetsData(data);
         } catch (error) {
+            console.error(error); // FIX: Gunakan 'error'
             toast.error('Gagal memuat data anggaran.');
         } finally {
             setIsLoading(false);
@@ -45,6 +53,7 @@ export default function BudgetsPage() {
             toast.success('Anggaran berhasil diperbarui!');
             fetchBudgets(date.month, date.year);
         } catch (error) {
+            console.error(error); // FIX: Gunakan 'error'
             toast.error('Gagal memperbarui anggaran.');
         }
     };
@@ -55,7 +64,7 @@ export default function BudgetsPage() {
         <div className="p-8">
             <h1 className="text-3xl font-bold mb-8">Anggaran Bulan Ini</h1>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {budgets.map((category) => {
+                {budgetsData.map((category) => {
                     const budget = category.budgets[0];
                     const budgetAmount = budget ? Number(budget.amount) : 0;
                     const spentAmount = category.spent || 0;

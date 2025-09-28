@@ -2,8 +2,7 @@ import { auth } from '../../auth';
 import { redirect } from 'next/navigation';
 import prisma from '../../lib/prisma';
 import DashboardClient from '../../components/dashboard/DashboardClient';
-// FIX 1: Impor semua tipe yang dibutuhkan LANGSUNG dari '@prisma/client'.
-import { type Account, type Category, type Transaction, Prisma } from '@prisma/client';
+import { type Account, type Category, type Transaction } from '@prisma/client';
 
 export type DashboardData = {
   totalIncome: number;
@@ -40,13 +39,11 @@ export default async function DashboardPage() {
     prisma.category.findMany({ where: { user_id: userId } }),
   ]);
   
-  // FIX 2: Lakukan semua kalkulasi menggunakan tipe `number` standar JavaScript.
   let totalIncome = 0;
   let totalExpenses = 0;
   const expenseByCategory: { [key: string]: number } = {};
 
   transactions.forEach((tx) => {
-    // FIX 3: Konversi nilai Prisma.Decimal menjadi `number` sebelum kalkulasi.
     const amount = Number(tx.amount);
     if (tx.type === 'INCOME') {
       totalIncome += amount;

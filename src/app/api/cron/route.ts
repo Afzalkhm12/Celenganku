@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
-import prisma from '@/lib/prisma';
+import prisma from '../../../lib/prisma';
+import { Prisma } from '@prisma/client';
 
 export async function GET() {
     try {
@@ -14,7 +15,7 @@ export async function GET() {
         });
         
         for (const recurring of dueTransactions) {
-            await prisma.$transaction(async (tx) => {
+            await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
                 await tx.transaction.create({
                     data: {
                         account_id: recurring.account_id,
@@ -36,7 +37,8 @@ export async function GET() {
                 });
 
                 const currentNextDate = new Date(recurring.next_occurrence_date);
-                let newNextDate = new Date(currentNextDate);
+                // FIX: Gunakan 'const' karena tidak di-reassign
+                const newNextDate = new Date(currentNextDate);
                 
                 switch (recurring.frequency) {
                     case 'DAILY': newNextDate.setDate(newNextDate.getDate() + 1); break;

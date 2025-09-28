@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Home, Target, PiggyBank, Repeat } from 'lucide-react';
 import { clsx } from 'clsx';
-import SignOutButton from '@/components/auth/SignOutButton';
+import SignOutButton from '../auth/SignOutButton';
 
 const navItems = [
   { href: '/dashboard', label: 'Dasbor', icon: Home },

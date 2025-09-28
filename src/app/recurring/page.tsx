@@ -1,14 +1,21 @@
 'use client';
 
 import * as React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
-import { Button } from '@/components/ui/Button';
-import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
-import { useAppToast } from '@/hooks/useAppToast';
+import { Card, CardContent } from '../../components/ui/Card'; // FIX: Hapus impor yang tidak digunakan
+import { Button } from '../../components/ui/Button';
+import { LoadingSpinner } from '../../components/ui/LoadingSpinner';
+import { useAppToast } from '../../hooks/useAppToast';
 import { PlusCircle } from 'lucide-react';
+import { RecurringTransaction, Category, Account } from '@prisma/client';
+
+// FIX: Definisikan tipe data yang lebih spesifik
+type RecurringTransactionWithDetails = RecurringTransaction & {
+    category: Category;
+    account: Account;
+};
 
 export default function RecurringPage() {
-    const [recurring, setRecurring] = React.useState<any[]>([]);
+    const [recurring, setRecurring] = React.useState<RecurringTransactionWithDetails[]>([]);
     const [isLoading, setIsLoading] = React.useState(true);
     const toast = useAppToast();
 
@@ -19,6 +26,7 @@ export default function RecurringPage() {
                 const data = await response.json();
                 setRecurring(data);
             } catch (error) {
+                console.error(error); // FIX: Gunakan 'error'
                 toast.error('Gagal memuat transaksi rutin.');
             } finally {
                 setIsLoading(false);

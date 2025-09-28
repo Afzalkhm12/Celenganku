@@ -1,13 +1,13 @@
 'use client';
 
 import * as React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
-import { InsightCard } from '@/components/ui/InsightCard';
-import { Button } from '@/components/ui/Button';
+import { Card, CardContent, CardHeader, CardTitle } from '../ui/Card';
+import { InsightCard } from '../ui/InsightCard';
+import { Button } from '../ui/Button';
 import { DollarSign, TrendingUp, TrendingDown, PlusCircle } from 'lucide-react';
-import TransactionFormModal from '@/components/transactions/TransactionFormModal';
+import TransactionFormModal from '../transactions/TransactionFormModal';
 import DashboardCharts from './DashboardCharts';
-import type { DashboardData } from '@/app/dashboard/page';
+import type { DashboardData } from '../../app/dashboard/page';
 
 const formatCurrency = (amount: number) => {
   return new Intl.NumberFormat('id-ID', {
@@ -19,10 +19,8 @@ const formatCurrency = (amount: number) => {
 
 export default function DashboardClient({ initialData }: { initialData: DashboardData }) {
   const [isModalOpen, setIsModalOpen] = React.useState(false);
-  const [data, setData] = React.useState(initialData);
 
-  const refreshData = async () => {
-    // Untuk masa depan, bisa fetch data lagi dari API
+  const refreshData = () => {
     window.location.reload();
   };
 
@@ -32,7 +30,7 @@ export default function DashboardClient({ initialData }: { initialData: Dashboar
         <header className="flex flex-col sm:flex-row justify-between sm:items-center mb-8 gap-4">
           <div>
             <h1 className="text-3xl font-bold text-gray-800">Dasbor</h1>
-            <p className="text-gray-600">Selamat datang kembali, {data.userName || 'Pengguna'}!</p>
+            <p className="text-gray-600">Selamat datang kembali, {initialData.userName || 'Pengguna'}!</p>
           </div>
           <Button onClick={() => setIsModalOpen(true)}>
             <PlusCircle className="h-4 w-4 mr-2" />
@@ -42,9 +40,9 @@ export default function DashboardClient({ initialData }: { initialData: Dashboar
 
         <div className="mb-8 space-y-4">
           <h2 className="text-xl font-semibold text-gray-700">Insight Bulan Ini</h2>
-          {data.insights.length > 0 ? (
-            data.insights.map((insight, index) => (
-              <InsightCard key={index} variant={insight.variant as 'positive' | 'warning' | 'info'}>
+          {initialData.insights.length > 0 ? (
+            initialData.insights.map((insight, index) => (
+              <InsightCard key={index} variant={insight.variant}>
                 {insight.text}
               </InsightCard>
             ))
@@ -62,7 +60,7 @@ export default function DashboardClient({ initialData }: { initialData: Dashboar
               <TrendingUp className="h-4 w-4 text-green-500" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{formatCurrency(data.totalIncome)}</div>
+              <div className="text-2xl font-bold">{formatCurrency(initialData.totalIncome)}</div>
               <p className="text-xs text-gray-500">Bulan ini</p>
             </CardContent>
           </Card>
@@ -72,7 +70,7 @@ export default function DashboardClient({ initialData }: { initialData: Dashboar
               <TrendingDown className="h-4 w-4 text-red-500" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{formatCurrency(data.totalExpenses)}</div>
+              <div className="text-2xl font-bold">{formatCurrency(initialData.totalExpenses)}</div>
               <p className="text-xs text-gray-500">Bulan ini</p>
             </CardContent>
           </Card>
@@ -82,8 +80,8 @@ export default function DashboardClient({ initialData }: { initialData: Dashboar
               <DollarSign className="h-4 w-4 text-blue-500" />
             </CardHeader>
             <CardContent>
-              <div className={`text-2xl font-bold ${data.savings >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                {formatCurrency(data.savings)}
+              <div className={`text-2xl font-bold ${initialData.savings >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                {formatCurrency(initialData.savings)}
               </div>
               <p className="text-xs text-gray-500">Bulan ini</p>
             </CardContent>
@@ -98,7 +96,7 @@ export default function DashboardClient({ initialData }: { initialData: Dashboar
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {data.recentTransactions.length > 0 ? data.recentTransactions.map((tx) => (
+                  {initialData.recentTransactions.length > 0 ? initialData.recentTransactions.map((tx) => (
                     <div key={tx.id} className="flex justify-between items-center">
                       <div>
                         <p className="font-medium">{tx.category.name}</p>
@@ -127,8 +125,8 @@ export default function DashboardClient({ initialData }: { initialData: Dashboar
             setIsModalOpen(false);
             refreshData();
           }}
-          accounts={data.accounts}
-          categories={data.categories}
+          accounts={initialData.accounts}
+          categories={initialData.categories}
         />
       </div>
     </div>

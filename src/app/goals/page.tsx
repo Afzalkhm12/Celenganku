@@ -1,15 +1,15 @@
 'use client';
 
 import * as React from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/Card';
-import { Button } from '@/components/ui/Button';
-import { Input } from '@/components/ui/Input';
-import { Modal } from '@/components/ui/Modal';
-import { InsightCard } from '@/components/ui/InsightCard';
-import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
-import { useAppToast } from '@/hooks/useAppToast';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../../components/ui/Card';
+import { Button } from '../../components/ui/Button';
+import { Input } from '../../components/ui/Input';
+import { Modal } from '../../components/ui/Modal';
+import { InsightCard } from '../../components/ui/InsightCard';
+import { LoadingSpinner } from '../../components/ui/LoadingSpinner';
+import { useAppToast } from '../../hooks/useAppToast';
 import { PlusCircle } from 'lucide-react';
-import type { FinancialGoal, FinancialTip } from '@/lib/prisma';
+import { FinancialGoal, FinancialTip } from '@prisma/client';
 
 const formatCurrency = (amount: number) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(amount);
 
@@ -32,6 +32,7 @@ export default function GoalsPage() {
             setGoals(goals);
             setTips(tips);
         } catch (error) {
+            console.error(error);
             toast.error('Gagal memuat data.');
         } finally {
             setIsLoading(false);
@@ -55,6 +56,7 @@ export default function GoalsPage() {
             fetchData();
             setName(''); setTargetAmount(''); setTargetDate('');
         } catch (error) {
+            console.error(error);
             toast.error('Gagal membuat celengan.');
         }
     };
@@ -96,10 +98,10 @@ export default function GoalsPage() {
                             <CardContent className="space-y-4">
                                 <div className="text-center font-bold text-lg text-blue-600">{formatCurrency(Number(goal.current_amount))}</div>
                                 <div className="w-full bg-gray-200 rounded-full h-4">
-                                    <div className="bg-blue-500 h-4 rounded-full" style={{ width: `${progress}%` }}></div>
+                                    <div className="bg-blue-500 h-4 rounded-full" style={{ width: `${Math.min(progress, 100)}%` }}></div>
                                 </div>
                                 <div className="text-sm text-gray-500 text-right">{progress.toFixed(1)}% tercapai</div>
-                                <Button className="w-full" size="sm">Isi Celengan</Button>
+                                <Button className="w-full" size="sm" disabled>Isi Celengan (TBD)</Button>
                             </CardContent>
                         </Card>
                     );

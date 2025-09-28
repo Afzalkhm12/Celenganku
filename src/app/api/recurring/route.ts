@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
-import { auth } from '@/auth';
-import prisma from '@/lib/prisma';
+import { auth } from '../../../auth';
+import prisma from '../../../lib/prisma';
 
 export async function GET() {
   const session = await auth();
@@ -14,6 +14,7 @@ export async function GET() {
     });
     return NextResponse.json(recurring);
   } catch (error) {
+    console.error('[RECURRING_GET]', error);
     return new NextResponse('Internal Server Error', { status: 500 });
   }
 }
@@ -34,6 +35,7 @@ export async function POST(request: Request) {
     });
     return NextResponse.json(newRecurring, { status: 201 });
   } catch (error) {
+    console.error('[RECURRING_POST]', error);
     return new NextResponse('Internal Server Error', { status: 500 });
   }
 }
