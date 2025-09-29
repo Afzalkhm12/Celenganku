@@ -22,23 +22,34 @@ export default async function RootLayout({
   const headersList = await headers();
   const pathname = headersList.get('x-next-pathname') || '';
 
+  // Define public pages that should not show sidebar
   const publicPages = ['/', '/login', '/register'];
   const isPublicPage = publicPages.includes(pathname);
 
+  // Show sidebar only if user is authenticated and not on public pages
   const showSidebar = !!session && !isPublicPage;
 
   return (
     <html lang="id">
       <body className={inter.className}>
         <Toaster position="top-center" reverseOrder={false} />
-        <div className="flex h-screen bg-gray-50">
-          {showSidebar && (
-            <div className="hidden md:flex">
-              <Sidebar />
-            </div>
-          )}
-          <main className="flex-1 overflow-y-auto">{children}</main>
-        </div>
+        {showSidebar ? (
+          // Layout with sidebar for authenticated users
+          <div className="flex h-screen bg-gray-50">
+            <Sidebar />
+            <main className="flex-1 overflow-y-auto">
+              {/* Mobile padding to account for mobile menu button */}
+              <div className="p-4 md:p-6 pt-16 md:pt-6">
+                {children}
+              </div>
+            </main>
+          </div>
+        ) : (
+          // Full-width layout for public pages
+          <main className="min-h-screen bg-white">
+            {children}
+          </main>
+        )}
       </body>
     </html>
   );
