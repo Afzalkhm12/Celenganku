@@ -2,13 +2,14 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, Target, PiggyBank, Repeat, Menu, X } from 'lucide-react';
+import { Home, Target, PiggyBank, Repeat, Menu, X, CreditCard } from 'lucide-react';
 import { clsx } from 'clsx';
 import SignOutButton from '../auth/SignOutButton';
 import { useState } from 'react';
 
 const navItems = [
   { href: '/dashboard', label: 'Dasbor', icon: Home },
+  { href: '/accounts', label: 'Akun', icon: CreditCard },
   { href: '/budgets', label: 'Anggaran', icon: Target },
   { href: '/goals', label: 'Celengan', icon: PiggyBank },
   { href: '/recurring', label: 'Transaksi Rutin', icon: Repeat },
