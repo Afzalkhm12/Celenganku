@@ -12,10 +12,9 @@ const AccountUpdateSchema = z.object({
 // GET /api/accounts/[id] - Get specific account
 export async function GET(
   request: NextRequest,
-  context: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  // FIX: Await params since it's now a Promise in Next.js 15
-  const params = await context.params;
+  const { id } = await params;
 
   try {
     const session = await auth();
@@ -25,7 +24,7 @@ export async function GET(
 
     const account = await prisma.account.findFirst({
       where: {
-        id: params.id,
+        id,
         user_id: session.user.id,
       },
     });
@@ -53,10 +52,9 @@ export async function GET(
 // PUT /api/accounts/[id] - Update account
 export async function PUT(
   request: NextRequest,
-  context: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  // FIX: Await params since it's now a Promise in Next.js 15
-  const params = await context.params;
+  const { id } = await params;
 
   try {
     const session = await auth();
@@ -70,7 +68,7 @@ export async function PUT(
     // Check if account exists and belongs to user
     const existingAccount = await prisma.account.findFirst({
       where: {
-        id: params.id,
+        id,
         user_id: session.user.id,
       },
     });
@@ -83,7 +81,7 @@ export async function PUT(
     }
 
     const updatedAccount = await prisma.account.update({
-      where: { id: params.id },
+      where: { id },
       data: validatedData,
     });
 
@@ -109,10 +107,9 @@ export async function PUT(
 // DELETE /api/accounts/[id] - Delete account
 export async function DELETE(
   request: NextRequest,
-  context: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  // FIX: Await params since it's now a Promise in Next.js 15
-  const params = await context.params;
+  const { id } = await params;
 
   try {
     const session = await auth();
@@ -123,7 +120,7 @@ export async function DELETE(
     // Check if account exists and belongs to user
     const existingAccount = await prisma.account.findFirst({
       where: {
-        id: params.id,
+        id,
         user_id: session.user.id,
       },
     });
@@ -137,7 +134,7 @@ export async function DELETE(
 
     // Check if account has transactions
     const transactionCount = await prisma.transaction.count({
-      where: { account_id: params.id },
+      where: { account_id: id },
     });
 
     if (transactionCount > 0) {
@@ -148,7 +145,7 @@ export async function DELETE(
     }
 
     await prisma.account.delete({
-      where: { id: params.id },
+      where: { id },
     });
 
     return NextResponse.json({ message: 'Akun berhasil dihapus' });
