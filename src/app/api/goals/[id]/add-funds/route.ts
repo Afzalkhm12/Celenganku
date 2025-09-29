@@ -2,11 +2,18 @@ import { NextResponse, type NextRequest } from 'next/server';
 import { auth } from '@/auth';
 import prisma from '@/lib/prisma';
 
-// FIX: This is the definitive, correct type signature Next.js expects for this dynamic route handler.
-// The second argument is a context object containing the params.
+// Define the precise context type Next.js is expecting, where params is a Promise.
+interface RouteContext {
+  params: Promise<{
+    id: string;
+  }>;
+}
+
+// FIX: This function signature now exactly matches the error's required type.
+// We type `context.params` as a Promise and then `await` it inside the function.
 export async function POST(
     request: NextRequest,
-    { params }: { params: { id: string } } 
+    context: RouteContext
 ) {
     const session = await auth();
     if (!session?.user?.id) {
@@ -16,7 +23,10 @@ export async function POST(
     try {
         const body = await request.json();
         const { amount } = body;
-        const goalId = params.id; // params.id is correctly typed as a string here
+
+        // Await the params promise to resolve to the actual params object
+        const params = await context.params;
+        const goalId = params.id;
 
         const numericAmount = parseFloat(amount);
         if (isNaN(numericAmount) || numericAmount <= 0) {
@@ -35,7 +45,6 @@ export async function POST(
             },
         });
 
-        // Ensure the response is serializable by converting Decimal types to numbers
         return NextResponse.json({
             ...updatedGoal,
             target_amount: updatedGoal.target_amount.toNumber(),
