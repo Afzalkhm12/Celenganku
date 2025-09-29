@@ -7,10 +7,11 @@ import { Input } from '../../components/ui/Input';
 import { Modal } from '../../components/ui/Modal';
 import { InsightCard } from '../../components/ui/InsightCard';
 import { useAppToast } from '../../hooks/useAppToast';
-import { PlusCircle, Edit, Trash2 } from 'lucide-react';
+import { PlusCircle, Trash2 } from 'lucide-react'; 
 import { useRouter } from 'next/navigation';
 import { type SerializableFinancialGoal } from './page';
 import { AddFundsModal } from './AddFundsModal';
+import { type SerializableAccount } from '../dashboard/page'; 
 
 // This is a plain type for use in the client component
 interface FinancialTip {
@@ -24,9 +25,10 @@ const formatCurrency = (amount: number) => new Intl.NumberFormat('id-ID', { styl
 interface GoalsClientProps {
     initialGoals: SerializableFinancialGoal[];
     initialTips: FinancialTip[];
+    accounts: SerializableAccount[]; // NEW PROP
 }
 
-export default function GoalsClient({ initialGoals, initialTips }: GoalsClientProps) {
+export default function GoalsClient({ initialGoals, initialTips, accounts }: GoalsClientProps) {
     const goals = initialGoals;
     const tips = initialTips;
     
@@ -189,6 +191,7 @@ export default function GoalsClient({ initialGoals, initialTips }: GoalsClientPr
                         router.refresh();
                     }}
                     goal={selectedGoal}
+                    accounts={accounts} // Meneruskan prop 'accounts'
                 />
             )}
         </div>

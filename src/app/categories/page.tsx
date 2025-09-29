@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Button } from '../../components/ui/Button';
 import { Card } from '../../components/ui/Card';
 import CategoryForm from '../../components/categories/CategoryForm';
@@ -26,11 +26,7 @@ export default function CategoriesPage() {
   const [editingCategory, setEditingCategory] = useState<Category | undefined>();
   const [filterType, setFilterType] = useState<'ALL' | 'INCOME' | 'EXPENSE'>('ALL');
 
-  useEffect(() => {
-    fetchCategories();
-  }, [filterType]);
-
-  const fetchCategories = async () => {
+  const fetchCategories = useCallback(async () => {
     try {
       const url = filterType === 'ALL' ? '/api/categories' : `/api/categories?type=${filterType}`;
       const response = await fetch(url);
@@ -44,7 +40,11 @@ export default function CategoriesPage() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [filterType]); // FIX: Tambahkan filterType sebagai dependensi
+
+  useEffect(() => {
+    fetchCategories();
+  }, [filterType, fetchCategories]);
 
   const handleAddCategory = () => {
     setEditingCategory(undefined);

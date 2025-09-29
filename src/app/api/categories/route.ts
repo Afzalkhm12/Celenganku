@@ -2,10 +2,12 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '../../../auth';
 import prisma from '../../../lib/prisma';
 import { z } from 'zod';
+import { Prisma } from '@prisma/client';
 
 const CategorySchema = z.object({
   name: z.string().min(1, 'Nama kategori harus diisi'),
-  type: z.enum(['INCOME', 'EXPENSE'], { required_error: 'Tipe kategori harus diisi' }),
+  // FIX: Menggunakan z.enum tanpa properti 'required_error' yang tidak didukung
+  type: z.enum(['INCOME', 'EXPENSE']), 
 });
 
 // GET /api/categories - Get all categories for authenticated user
@@ -19,7 +21,7 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const type = searchParams.get('type');
 
-    const where: any = { user_id: session.user.id };
+    const where: Prisma.CategoryWhereInput = { user_id: session.user.id };
     if (type && (type === 'INCOME' || type === 'EXPENSE')) {
       where.type = type;
     }
@@ -92,8 +94,9 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(category, { status: 201 });
   } catch (error) {
     if (error instanceof z.ZodError) {
+      // FIX: Mengganti 'error.errors' dengan 'error.issues'
       return NextResponse.json(
-        { error: error.errors[0].message },
+        { error: error.issues[0].message },
         { status: 400 }
       );
     }

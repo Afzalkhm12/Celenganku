@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '../../../../auth';
 import prisma from '../../../../lib/prisma';
 import { z } from 'zod';
+import { Account } from '@prisma/client';
 
 const AccountUpdateSchema = z.object({
   name: z.string().min(1, 'Nama akun harus diisi').optional(),
@@ -12,8 +13,10 @@ const AccountUpdateSchema = z.object({
 // GET /api/accounts/[id] - Get specific account
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: { id: string } } 
 ) {
+  const { params } = context; 
+
   try {
     const session = await auth();
     if (!session?.user?.id) {
@@ -34,10 +37,11 @@ export async function GET(
       );
     }
 
+    // FIX: Kembalikan objek sederhana tanpa tipe kustom eksplisit
     return NextResponse.json({
       ...account,
       balance: account.balance.toNumber(),
-    });
+    }); 
   } catch (error) {
     console.error('Error fetching account:', error);
     return NextResponse.json(
@@ -50,8 +54,10 @@ export async function GET(
 // PUT /api/accounts/[id] - Update account
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+  context: { params: { id: string } } 
+) { 
+  const { params } = context;
+
   try {
     const session = await auth();
     if (!session?.user?.id) {
@@ -81,14 +87,15 @@ export async function PUT(
       data: validatedData,
     });
 
+    // FIX: Kembalikan objek sederhana tanpa tipe kustom eksplisit
     return NextResponse.json({
       ...updatedAccount,
       balance: updatedAccount.balance.toNumber(),
-    });
+    }); 
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(
-        { error: error.errors[0].message },
+        { error: error.issues[0].message },
         { status: 400 }
       );
     }
@@ -103,8 +110,10 @@ export async function PUT(
 // DELETE /api/accounts/[id] - Delete account
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+  context: { params: { id: string } } 
+) { 
+  const { params } = context;
+
   try {
     const session = await auth();
     if (!session?.user?.id) {

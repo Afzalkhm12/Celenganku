@@ -35,19 +35,27 @@ export async function POST(request: Request) {
   try {
     const body = await request.json();
     
+    // Destructure fields from client payload
+    const { amount, type, categoryId, accountId, description, frequency, start_date, end_date } = body;
+
     // FIX: Pastikan amount diparse sebagai float/number
-    const amountAsDecimal = parseFloat(body.amount);
+    const amountAsDecimal = parseFloat(amount);
     if (isNaN(amountAsDecimal) || amountAsDecimal <= 0) {
         return new NextResponse('Invalid amount provided or amount is zero/negative', { status: 400 });
     }
 
     const newRecurring = await prisma.recurringTransaction.create({
       data: {
-        ...body,
+        // FIX: Mapping eksplisit camelCase ke snake_case foreign keys
+        account_id: accountId,
+        category_id: categoryId,
         amount: amountAsDecimal, 
-        start_date: new Date(body.start_date),
-        next_occurrence_date: new Date(body.start_date),
-        end_date: body.end_date ? new Date(body.end_date) : null,
+        type,
+        description,
+        frequency,
+        start_date: new Date(start_date),
+        next_occurrence_date: new Date(start_date),
+        end_date: end_date ? new Date(end_date) : null,
       },
     });
     return NextResponse.json({

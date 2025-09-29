@@ -27,52 +27,70 @@ export default function BudgetsPage() {
     const [budgetsData, setBudgetsData] = React.useState<SerializableCategoryWithBudget[]>([]);
     const [isLoading, setIsLoading] = React.useState(true);
     const [pendingBudgets, setPendingBudgets] = React.useState<Record<string, number>>({});
+    const [savingCategoryId, setSavingCategoryId] = React.useState<string | null>(null); 
     const toast = useAppToast();
     
     const today = new Date();
-    const initialMonth = today.getMonth() + 1;
-    const initialYear = today.getFullYear();
-
     const [date, setDate] = React.useState({
-        month: initialMonth,
-        year: initialYear,
+        month: today.getMonth() + 1,
+        year: today.getFullYear(),
     });
 
     const formatMonthForInput = (year: number, month: number) => {
         return `${year}-${String(month).padStart(2, '0')}`;
     };
 
-    // FIX: Refactor fetchBudgets untuk menggunakan state 'date' secara langsung dan menjadikannya dependent pada 'date'
-    const fetchBudgets = React.useCallback(async () => { 
+    // FIX: Core Fetching Logic menggunakan useCallback
+    const fetchBudgets = React.useCallback(async (year: number, month: number) => {
         setIsLoading(true);
+        setBudgetsData([]);
         setPendingBudgets({});
-        const { month, year } = date;
 
         try {
             const response = await fetch(`/api/budgets?month=${month}&year=${year}`);
-            if (!response.ok) throw new Error('Gagal memuat data anggaran.');
+            
+            if (!response.ok) {
+                let errorMessage = `Gagal memuat data anggaran (Status: ${response.status}).`;
+                const errorText = await response.text();
+                try {
+                    const errorJson = JSON.parse(errorText);
+                    errorMessage = errorJson.error || errorMessage;
+                } catch {
+                    // Abaikan
+                }
+                throw new Error(errorMessage);
+            }
+            
             const data: SerializableCategoryWithBudget[] = await response.json();
             
             const initialPending = data.reduce((acc, category) => {
-                const budget = category.budgets[0];
+                const budget = category.budgets.find(b => b.month === month && b.year === year); 
                 acc[category.id] = budget ? budget.amount : 0;
                 return acc;
             }, {} as Record<string, number>);
 
             setBudgetsData(data);
             setPendingBudgets(initialPending);
+
         } catch (err) {
             const error = err as Error;
-            toast.error(error.message || 'Gagal memuat data anggaran.');
+            console.error('[BUDGETS_FETCH_ERROR]', error.message);
+            toast.error(`Gagal memuat anggaran: ${error.message}`);
             setBudgetsData([]);
+            setPendingBudgets({});
         } finally {
             setIsLoading(false);
         }
-    }, [toast, date.month, date.year]); // Dependency harus menyertakan month dan year
+    }, [toast]); 
 
+    // FIX: useEffect Stabil untuk Fetching
     React.useEffect(() => {
-        fetchBudgets(); // Panggil tanpa argumen
-    }, [fetchBudgets]);
+        // Karena fetchBudgets sudah stabil (berkat useCallback dan toast yang stabil), 
+        // useEffect ini tidak akan loop.
+        fetchBudgets(date.year, date.month);
+    }, [date, fetchBudgets]); 
+
+    // -----------------------------------------------------
 
     const handleInputChange = (categoryId: string, value: string) => {
         const numericValue = parseFloat(value);
@@ -83,10 +101,13 @@ export default function BudgetsPage() {
     };
 
     const handleBudgetSave = async (categoryId: string) => {
+        setSavingCategoryId(categoryId);
+        
         const amount = pendingBudgets[categoryId] ?? 0;
 
         if (amount < 0) {
             toast.error('Anggaran tidak boleh negatif.');
+            setSavingCategoryId(null);
             return;
         }
 
@@ -108,15 +129,37 @@ export default function BudgetsPage() {
             }
 
             toast.success('Anggaran berhasil diperbarui!');
-            fetchBudgets(); // Muat ulang data
+            
+            const newBudget: SerializableBudget = await response.json();
+            
+            // Optimistic Update: Update data secara lokal
+            setBudgetsData(prevData => prevData.map(cat => {
+                if (cat.id !== categoryId) return cat;
+
+                const updatedBudgets = cat.budgets.filter(b => b.month !== date.month || b.year !== date.year);
+                updatedBudgets.push(newBudget);
+                
+                return {
+                    ...cat,
+                    budgets: updatedBudgets 
+                };
+            }));
+
+            setPendingBudgets(prev => ({ ...prev, [categoryId]: newBudget.amount }));
+
         } catch (err) {
             const error = err as Error
             toast.error(error.message || 'Gagal memperbarui anggaran.');
-            fetchBudgets();
+            // Re-fetch sebagai fallback sinkronisasi
+            fetchBudgets(date.year, date.month); 
+        } finally {
+            setSavingCategoryId(null);
         }
     };
     
-    if (isLoading) return <div className="flex h-screen items-center justify-center"><LoadingSpinner size="lg" /></div>;
+    if (isLoading && budgetsData.length === 0) {
+        return <div className="flex h-screen items-center justify-center"><LoadingSpinner size="lg" /></div>;
+    }
 
     const formattedDateString = new Date(date.year, date.month - 1).toLocaleDateString('id-ID', { year: 'numeric', month: 'long' });
 
@@ -136,6 +179,7 @@ export default function BudgetsPage() {
                                 setDate({ year: parseInt(year), month: parseInt(month) });
                             }
                         }}
+                        disabled={savingCategoryId !== null || isLoading} 
                     />
                 </div>
             </div>
@@ -148,7 +192,11 @@ export default function BudgetsPage() {
             ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {budgetsData.map((category) => {
-                        const budgetAmount = pendingBudgets[category.id] ?? 0;
+                        const currentBudget = category.budgets.find(b => b.month === date.month && b.year === date.year);
+                        
+                        const savedAmount = currentBudget?.amount ?? 0;
+                        const budgetAmount = pendingBudgets[category.id] ?? savedAmount;
+                        
                         const spentAmount = category.spent || 0;
                         const progress = budgetAmount > 0 ? (spentAmount / budgetAmount) * 100 : 0;
                         
@@ -157,6 +205,11 @@ export default function BudgetsPage() {
                         if (progress >= 100) progressBarColor = 'bg-red-500';
 
                         const isOverBudget = spentAmount > budgetAmount && budgetAmount > 0;
+                        const isCurrentlySaving = savingCategoryId === category.id;
+                        
+                        const inputValue = pendingBudgets[category.id] !== undefined 
+                            ? pendingBudgets[category.id] 
+                            : savedAmount;
 
                         return (
                             <Card key={category.id}>
@@ -184,19 +237,20 @@ export default function BudgetsPage() {
                                     <div className="flex items-center space-x-2">
                                         <Input 
                                             type="number" 
-                                            value={budgetAmount}
+                                            value={inputValue}
                                             onChange={(e) => handleInputChange(category.id, e.target.value)}
                                             className="flex-1"
                                             placeholder="Set Anggaran"
                                             min="0"
                                             step="0.01"
+                                            disabled={isCurrentlySaving}
                                         />
                                         <Button 
                                             size="sm" 
                                             onClick={() => handleBudgetSave(category.id)}
-                                            disabled={isLoading}
+                                            disabled={isCurrentlySaving}
                                         >
-                                            Simpan
+                                            {isCurrentlySaving ? <LoadingSpinner size="sm" color="light" /> : 'Simpan'}
                                         </Button>
                                     </div>
                                 </CardContent>

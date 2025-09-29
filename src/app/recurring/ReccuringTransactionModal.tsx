@@ -38,33 +38,34 @@ export function RecurringTransactionModal({ isOpen, onClose, onSuccess, accounts
 
     const filteredCategories = React.useMemo(() => categories.filter(c => c.type === type), [categories, type]);
 
-    const categoryOptions: SelectOption[] = filteredCategories.map(cat => ({ value: cat.id, label: cat.name }));
-    const accountOptions: SelectOption[] = accounts.map(acc => ({ value: acc.id, label: acc.name }));
+    const categoryOptions: SelectOption[] = (filteredCategories as Category[]).map(cat => ({ value: cat.id, label: cat.name }));
+    const accountOptions: SelectOption[] = (accounts as SerializableAccount[]).map(acc => ({ value: acc.id, label: acc.name }));
 
-    // FIX: Reset form state when modal opens/type changes
+    // FIX 1: Reset penuh saat modal dibuka dan atur default account.
     React.useEffect(() => {
         if (isOpen) {
-            // Set default category ID
-            if (categoryOptions.length > 0) {
-                setCategoryId(categoryOptions[0].value);
-            } else {
-                setCategoryId(''); 
-            }
-
-            // Set default account ID
-            if (accountOptions.length > 0 && !accountId) {
-                setAccountId(accountOptions[0].value);
-            }
-            // Reset amount, description, dates when switching type or opening modal
+            // Reset fields
             setAmount('');
             setDescription('');
             setFrequency(frequencyOptions[2].value);
             setStartDate(new Date().toISOString().split('T')[0]);
             setEndDate('');
+        
+            // Set default account ID
+            if (accounts.length > 0) {
+                setAccountId(accounts[0].id);
+            }
         }
-        // Dependency array: includes all necessary external values
-    }, [type, isOpen, categoryOptions.length, accountOptions.length, accountId]);
+    }, [isOpen, accounts]);
 
+    // FIX 2: Atur default category saat tipe transaksi berubah. (Tambahkan categoryOptions ke dependency array)
+    React.useEffect(() => {
+        if (categoryOptions.length > 0) {
+            setCategoryId(categoryOptions[0].value);
+        } else {
+            setCategoryId(''); 
+        }
+    }, [categoryOptions]); // FIX: Tambahkan categoryOptions
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -105,13 +106,6 @@ export function RecurringTransactionModal({ isOpen, onClose, onSuccess, accounts
 
               if (response.ok) {
                 toast.success('Transaksi rutin berhasil ditambahkan!');
-                // Reset form state on success
-                setAmount('');
-                setDescription('');
-                setFrequency(frequencyOptions[2].value);
-                setStartDate(new Date().toISOString().split('T')[0]);
-                setEndDate('');
-                
                 onSuccess();
               } else {
                 const errorData = await response.text();

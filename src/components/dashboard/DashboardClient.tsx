@@ -41,7 +41,7 @@ export default function DashboardClient({ initialData }: { initialData: Dashboar
                 const errorData = await response.json();
                 toast.error(errorData.error || 'Gagal menghapus transaksi.');
             }
-        } catch (error) {
+        } catch { // FIX: Mengganti catch(_error)
             toast.error('Terjadi kesalahan saat menghapus transaksi.');
         }
     };

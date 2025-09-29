@@ -47,7 +47,7 @@ export default function RecurringClient({ initialRecurring, accounts, categories
                 const errorData = await response.json();
                 toast.error(errorData.error || 'Gagal menghapus transaksi rutin.');
             }
-        } catch (error) {
+        } catch { // FIX: Mengganti catch(_error)
             toast.error('Terjadi kesalahan saat menghapus transaksi rutin.');
         }
     };
