@@ -5,14 +5,19 @@ import { z } from 'zod';
 
 const CategoryUpdateSchema = z.object({
   name: z.string().min(1, 'Nama kategori harus diisi').optional(),
-  type: z.enum(['INCOME', 'EXPENSE']).optional(),
+  type: z.enum(['income', 'expense']).optional(),
+  icon: z.string().optional(),
+  color: z.string().optional(),
 });
 
 // GET /api/categories/[id] - Get specific category
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
+  // CRITICAL FIX: Await params - it's a Promise in Next.js 15
+  const params = await context.params;
+
   try {
     const session = await auth();
     if (!session?.user?.id) {
@@ -29,9 +34,9 @@ export async function GET(
           select: {
             transactions: true,
             budgets: true,
-          }
-        }
-      }
+          },
+        },
+      },
     });
 
     if (!category) {
@@ -54,8 +59,11 @@ export async function GET(
 // PUT /api/categories/[id] - Update category
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
+  // CRITICAL FIX: Await params - it's a Promise in Next.js 15
+  const params = await context.params;
+
   try {
     const session = await auth();
     if (!session?.user?.id) {
@@ -80,44 +88,16 @@ export async function PUT(
       );
     }
 
-    // Check for duplicate name if name is being updated
-    if (validatedData.name && validatedData.name !== existingCategory.name) {
-      const duplicateCategory = await prisma.category.findFirst({
-        where: {
-          user_id: session.user.id,
-          name: validatedData.name,
-          type: validatedData.type || existingCategory.type,
-          id: { not: params.id },
-        },
-      });
-
-      if (duplicateCategory) {
-        return NextResponse.json(
-          { error: 'Kategori dengan nama ini sudah ada untuk tipe yang sama' },
-          { status: 400 }
-        );
-      }
-    }
-
     const updatedCategory = await prisma.category.update({
       where: { id: params.id },
       data: validatedData,
-      include: {
-        _count: {
-          select: {
-            transactions: true,
-            budgets: true,
-          }
-        }
-      }
     });
 
     return NextResponse.json(updatedCategory);
   } catch (error) {
     if (error instanceof z.ZodError) {
-      // FIX: Mengganti 'error.errors' dengan 'error.issues'
       return NextResponse.json(
-        { error: error.issues[0].message }, 
+        { error: error.issues[0].message },
         { status: 400 }
       );
     }
@@ -132,8 +112,11 @@ export async function PUT(
 // DELETE /api/categories/[id] - Delete category
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
+  // CRITICAL FIX: Await params - it's a Promise in Next.js 15
+  const params = await context.params;
+
   try {
     const session = await auth();
     if (!session?.user?.id) {
@@ -155,15 +138,26 @@ export async function DELETE(
       );
     }
 
-    // Check if category has transactions or budgets
-    const [transactionCount, budgetCount] = await Promise.all([
-      prisma.transaction.count({ where: { category_id: params.id } }),
-      prisma.budget.count({ where: { category_id: params.id } }),
-    ]);
+    // Check if category has transactions
+    const transactionCount = await prisma.transaction.count({
+      where: { category_id: params.id },
+    });
 
-    if (transactionCount > 0 || budgetCount > 0) {
+    if (transactionCount > 0) {
       return NextResponse.json(
-        { error: 'Tidak dapat menghapus kategori yang masih digunakan dalam transaksi atau anggaran' },
+        { error: 'Tidak dapat menghapus kategori yang masih digunakan' },
+        { status: 400 }
+      );
+    }
+
+    // Check if category has budgets
+    const budgetCount = await prisma.budget.count({
+      where: { category_id: params.id },
+    });
+
+    if (budgetCount > 0) {
+      return NextResponse.json(
+        { error: 'Tidak dapat menghapus kategori yang memiliki budget' },
         { status: 400 }
       );
     }

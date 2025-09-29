@@ -12,7 +12,7 @@ const GoalUpdateSchema = z.object({
 // PUT /api/goals/[id] - Update goal
 export async function PUT(
     request: NextRequest,
-    { params }: { params: { id: string } }
+    context: { params: Promise<{ id: string }> } // FIX: params must be a Promise
 ) {
     const session = await auth();
     if (!session?.user?.id) {
@@ -20,12 +20,13 @@ export async function PUT(
     }
 
     try {
+        const { id } = await context.params; // FIX: Await params before accessing
         const body = await request.json();
         const validatedData = GoalUpdateSchema.parse(body);
 
         const existingGoal = await prisma.financialGoal.findFirst({
             where: {
-                id: params.id,
+                id: id,
                 user_id: session.user.id,
             },
         });
@@ -38,7 +39,7 @@ export async function PUT(
         }
 
         const updatedGoal = await prisma.financialGoal.update({
-            where: { id: params.id },
+            where: { id: id },
             data: {
                 name: validatedData.name,
                 target_amount: validatedData.target_amount,
@@ -67,7 +68,7 @@ export async function PUT(
 // DELETE /api/goals/[id] - Delete specific goal
 export async function DELETE(
     request: NextRequest,
-    { params }: { params: { id: string } }
+    context: { params: Promise<{ id: string }> } // FIX: params must be a Promise
 ) {
     const session = await auth();
     if (!session?.user?.id) {
@@ -75,7 +76,7 @@ export async function DELETE(
     }
 
     try {
-        const goalId = params.id;
+        const { id: goalId } = await context.params; // FIX: Await params before accessing
 
         const existingGoal = await prisma.financialGoal.findFirst({
             where: {

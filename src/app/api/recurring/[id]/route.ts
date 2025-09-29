@@ -5,14 +5,14 @@ import prisma from '@/lib/prisma';
 // DELETE /api/recurring/[id] - Delete specific recurring transaction
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> } // FIX: params must be a Promise
 ) {
   const session = await auth();
   if (!session?.user?.id) {
     return new NextResponse('Unauthorized', { status: 401 });
   }
 
-  const recurringId = params.id;
+  const { id: recurringId } = await context.params; // FIX: Await params before accessing
 
   try {
     // Check if recurring transaction exists and belongs to user

@@ -112,3 +112,9 @@ model FinancialTip {
   tip_text String @db.Text
   category String @db.VarChar(50) // e.g., 'SAVING', 'BUDGETING', 'INVESTING', 'DEBT'
 }
+
+enum GoalStatus {
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}

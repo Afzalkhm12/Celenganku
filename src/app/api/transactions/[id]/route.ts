@@ -13,14 +13,14 @@ const TransactionUpdateSchema = z.object({
 // PUT /api/transactions/[id] - Update specific transaction
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> } // FIX: params must be a Promise
 ) {
   const session = await auth();
   if (!session?.user?.id) {
     return new NextResponse('Unauthorized', { status: 401 });
   }
 
-  const transactionId = params.id;
+  const { id: transactionId } = await context.params; // FIX: Await params before accessing
 
   try {
     const body = await request.json();
@@ -98,14 +98,14 @@ export async function PUT(
 // DELETE /api/transactions/[id] - Delete specific transaction
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> } // FIX: params must be a Promise
 ) {
   const session = await auth();
   if (!session?.user?.id) {
     return new NextResponse('Unauthorized', { status: 401 });
   }
 
-  const transactionId = params.id;
+  const { id: transactionId } = await context.params; // FIX: Await params before accessing
 
   try {
     const existingTransaction = await prisma.transaction.findUnique({

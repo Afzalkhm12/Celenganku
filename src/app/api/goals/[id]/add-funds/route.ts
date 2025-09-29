@@ -3,29 +3,25 @@ import { auth } from '@/auth';
 import prisma from '@/lib/prisma';
 import { Prisma } from '@prisma/client'; 
 
-interface RouteContext {
-    params?: { 
-        id: string;
-    };
-}
-
 export async function POST(
     request: NextRequest,
-    { params }: RouteContext
+    context: { params: Promise<{ id: string }> } // FIX: params must be a Promise in Next.js 15+
 ) {
     const session = await auth();
     if (!session?.user?.id) {
         return new NextResponse('Unauthorized', { status: 401 });
     }
 
-    if (!params?.id) {
+    // FIX: Await the params Promise before accessing properties
+    const { id: goalId } = await context.params; 
+
+    if (!goalId) {
         return new NextResponse('Missing goal ID', { status: 400 });
     }
 
     try {
         const body = await request.json();
         const { amount, accountId } = body; 
-        const goalId = params.id;
 
         const numericAmount = parseFloat(amount);
         if (isNaN(numericAmount) || numericAmount <= 0) {
@@ -36,10 +32,9 @@ export async function POST(
             return new NextResponse('Missing source accountId', { status: 400 });
         }
 
-        // FIX: Gunakan Prisma.$transaction untuk menjamin konsistensi data
         const updatedGoal = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
             
-            // 1. Debit the source account (cek kepemilikan dan pastikan saldo tidak negatif)
+            // 1. Debit the source account
             const sourceAccount = await tx.account.findUnique({
                 where: { id: accountId, user_id: session.user.id },
                 select: { balance: true }
@@ -48,7 +43,8 @@ export async function POST(
             if (!sourceAccount) {
                  throw new Error('Source account not found or unauthorized.');
             }
-            if (sourceAccount.balance.toNumber() < numericAmount) {
+            
+            if (sourceAccount.balance.toNumber() < numericAmount) { 
                 throw new Error('Insufficient balance in source account.');
             }
             
@@ -60,7 +56,7 @@ export async function POST(
             });
             
             // 2. Increment the goal's current amount
-            return await tx.financialGoal.update({
+            return await tx.financialGoal.update({ 
                 where: {
                     id: goalId,
                     user_id: session.user.id,

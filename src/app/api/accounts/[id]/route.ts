@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '../../../../auth';
 import prisma from '../../../../lib/prisma';
 import { z } from 'zod';
-import { Account } from '@prisma/client';
 
 const AccountUpdateSchema = z.object({
   name: z.string().min(1, 'Nama akun harus diisi').optional(),
@@ -13,9 +12,10 @@ const AccountUpdateSchema = z.object({
 // GET /api/accounts/[id] - Get specific account
 export async function GET(
   request: NextRequest,
-  context: { params: { id: string } } 
+  context: { params: Promise<{ id: string }> }
 ) {
-  const { params } = context; 
+  // FIX: Await params since it's now a Promise in Next.js 15
+  const params = await context.params;
 
   try {
     const session = await auth();
@@ -37,11 +37,10 @@ export async function GET(
       );
     }
 
-    // FIX: Kembalikan objek sederhana tanpa tipe kustom eksplisit
     return NextResponse.json({
       ...account,
       balance: account.balance.toNumber(),
-    }); 
+    });
   } catch (error) {
     console.error('Error fetching account:', error);
     return NextResponse.json(
@@ -54,9 +53,10 @@ export async function GET(
 // PUT /api/accounts/[id] - Update account
 export async function PUT(
   request: NextRequest,
-  context: { params: { id: string } } 
-) { 
-  const { params } = context;
+  context: { params: Promise<{ id: string }> }
+) {
+  // FIX: Await params since it's now a Promise in Next.js 15
+  const params = await context.params;
 
   try {
     const session = await auth();
@@ -87,11 +87,10 @@ export async function PUT(
       data: validatedData,
     });
 
-    // FIX: Kembalikan objek sederhana tanpa tipe kustom eksplisit
     return NextResponse.json({
       ...updatedAccount,
       balance: updatedAccount.balance.toNumber(),
-    }); 
+    });
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(
@@ -110,9 +109,10 @@ export async function PUT(
 // DELETE /api/accounts/[id] - Delete account
 export async function DELETE(
   request: NextRequest,
-  context: { params: { id: string } } 
-) { 
-  const { params } = context;
+  context: { params: Promise<{ id: string }> }
+) {
+  // FIX: Await params since it's now a Promise in Next.js 15
+  const params = await context.params;
 
   try {
     const session = await auth();
