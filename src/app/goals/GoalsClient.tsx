@@ -8,9 +8,16 @@ import { Modal } from '../../components/ui/Modal';
 import { InsightCard } from '../../components/ui/InsightCard';
 import { useAppToast } from '../../hooks/useAppToast';
 import { PlusCircle } from 'lucide-react';
-import { type FinancialTip } from '@prisma/client';
-import { type SerializableFinancialGoal } from './page';
 import { useRouter } from 'next/navigation';
+import { type SerializableFinancialGoal } from './page';
+import { AddFundsModal } from './AddFundsModal';
+
+// This is a plain type for use in the client component
+interface FinancialTip {
+    id: string;
+    tip_text: string;
+    category: string;
+}
 
 const formatCurrency = (amount: number) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(amount);
 
@@ -20,8 +27,10 @@ interface GoalsClientProps {
 }
 
 export default function GoalsClient({ initialGoals, initialTips }: GoalsClientProps) {
-    const [goals, setGoals] = React.useState<SerializableFinancialGoal[]>(initialGoals);
-    const [tips] = React.useState<FinancialTip[]>(initialTips);
+    // FIX: Removed unused 'setGoals' and 'setTips' as data is refreshed via router
+    const goals = initialGoals;
+    const tips = initialTips;
+    
     const [isModalOpen, setIsModalOpen] = React.useState(false);
     const toast = useAppToast();
     const router = useRouter();
@@ -29,6 +38,8 @@ export default function GoalsClient({ initialGoals, initialTips }: GoalsClientPr
     const [name, setName] = React.useState('');
     const [targetAmount, setTargetAmount] = React.useState('');
     const [targetDate, setTargetDate] = React.useState('');
+    const [isAddFundsModalOpen, setIsAddFundsModalOpen] = React.useState(false);
+    const [selectedGoal, setSelectedGoal] = React.useState<SerializableFinancialGoal | null>(null);
 
     const handleCreateGoal = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -43,12 +54,19 @@ export default function GoalsClient({ initialGoals, initialTips }: GoalsClientPr
             toast.success('Celengan baru berhasil dibuat!');
             setIsModalOpen(false);
             setName(''); setTargetAmount(''); setTargetDate('');
-            router.refresh(); // Perintah Next.js untuk memuat ulang data dari server
-        } catch (error) {
-            toast.error('Gagal membuat celengan.');
+            router.refresh();
+        } catch (e) {
+            // FIX: Use the error variable
+            const message = e instanceof Error ? e.message : 'Gagal membuat celengan.';
+            toast.error(message);
         }
     };
     
+    const handleAddFundsClick = (goal: SerializableFinancialGoal) => {
+        setSelectedGoal(goal);
+        setIsAddFundsModalOpen(true);
+    };
+
     const getSmartTip = React.useMemo(() => {
         if (goals.length === 0 || tips.length === 0) return null;
         const goalName = goals[0].name.toLowerCase();
@@ -94,7 +112,7 @@ export default function GoalsClient({ initialGoals, initialTips }: GoalsClientPr
                                         <div className="bg-blue-500 h-4 rounded-full" style={{ width: `${Math.min(progress, 100)}%` }}></div>
                                     </div>
                                     <div className="text-sm text-gray-500 text-right">{progress.toFixed(1)}% tercapai</div>
-                                    <Button className="w-full" size="sm" disabled>Isi Celengan (TBD)</Button>
+                                    <Button className="w-full" size="sm" onClick={() => handleAddFundsClick(goal)}>Isi Celengan</Button>
                                 </CardContent>
                             </Card>
                         );
@@ -122,6 +140,18 @@ export default function GoalsClient({ initialGoals, initialTips }: GoalsClientPr
                     </div>
                 </form>
             </Modal>
+
+            {selectedGoal && (
+                <AddFundsModal
+                    isOpen={isAddFundsModalOpen}
+                    onClose={() => setIsAddFundsModalOpen(false)}
+                    onSuccess={() => {
+                        setIsAddFundsModalOpen(false);
+                        router.refresh();
+                    }}
+                    goal={selectedGoal}
+                />
+            )}
         </div>
     );
 }

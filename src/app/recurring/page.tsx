@@ -1,10 +1,9 @@
 import { auth } from '../../auth';
 import { redirect } from 'next/navigation';
 import prisma from '../../lib/prisma';
-import RecurringClient from './RecurringClient'; // Impor Client Component
+import RecurringClient from './RecurringClient';
 import { RecurringTransaction, Category, Account as PrismaAccount } from '@prisma/client';
 
-// Tipe data yang aman untuk dikirim ke client
 type SerializableAccount = Omit<PrismaAccount, 'balance'> & {
     balance: number;
 };
@@ -20,13 +19,16 @@ export default async function RecurringPage() {
         redirect('/login');
     }
 
-    const recurringData = await prisma.recurringTransaction.findMany({
-      where: { account: { user_id: session.user.id } },
-      include: { category: true, account: true },
-      orderBy: { next_occurrence_date: 'asc' },
-    });
+    const [recurringData, accounts, categories] = await Promise.all([
+        prisma.recurringTransaction.findMany({
+            where: { account: { user_id: session.user.id } },
+            include: { category: true, account: true },
+            orderBy: { next_occurrence_date: 'asc' },
+        }),
+        prisma.account.findMany({ where: { user_id: session.user.id } }),
+        prisma.category.findMany({ where: { user_id: session.user.id } }),
+    ]);
 
-    // Ubah Decimal menjadi number
     const serializableRecurring: SerializableRecurringTransaction[] = recurringData.map(item => ({
         ...item,
         amount: item.amount.toNumber(),
@@ -36,5 +38,10 @@ export default async function RecurringPage() {
         }
     }));
 
-    return <RecurringClient initialRecurring={serializableRecurring} />;
+    const serializableAccounts = accounts.map(account => ({
+        ...account,
+        balance: account.balance.toNumber(),
+    }));
+
+    return <RecurringClient initialRecurring={serializableRecurring} accounts={serializableAccounts} categories={categories} />;
 }

@@ -5,22 +5,35 @@ import { Card, CardContent } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { PlusCircle } from 'lucide-react';
 import { type SerializableRecurringTransaction } from './page';
+import { RecurringTransactionModal } from './ReccuringTransactionModal';
+import { Category, Account as PrismaAccount } from '@prisma/client';
 
 const formatCurrency = (amount: number) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(amount);
 
+type SerializableAccount = Omit<PrismaAccount, 'balance'> & {
+    balance: number;
+};
+
 interface RecurringClientProps {
     initialRecurring: SerializableRecurringTransaction[];
+    accounts: SerializableAccount[];
+    categories: Category[];
 }
 
-export default function RecurringClient({ initialRecurring }: RecurringClientProps) {
-    // Data sudah disediakan oleh server, tidak perlu state loading
+export default function RecurringClient({ initialRecurring, accounts, categories }: RecurringClientProps) {
+    const [isModalOpen, setIsModalOpen] = React.useState(false);
     const recurring = initialRecurring;
+
+    const refreshData = () => {
+        window.location.reload();
+    };
+
 
     return (
         <div className="p-8">
             <div className="flex justify-between items-center mb-8">
                 <h1 className="text-3xl font-bold">Transaksi Rutin</h1>
-                <Button disabled><PlusCircle className="mr-2 h-4 w-4" /> Atur Baru (TBD)</Button>
+                <Button onClick={() => setIsModalOpen(true)}><PlusCircle className="mr-2 h-4 w-4" /> Atur Baru</Button>
             </div>
             <Card>
                 <CardContent className="p-0">
@@ -58,6 +71,16 @@ export default function RecurringClient({ initialRecurring }: RecurringClientPro
                     </div>
                 </CardContent>
             </Card>
+            <RecurringTransactionModal
+                isOpen={isModalOpen}
+                onClose={() => setIsModalOpen(false)}
+                onSuccess={() => {
+                    setIsModalOpen(false);
+                    refreshData();
+                }}
+                accounts={accounts}
+                categories={categories}
+            />
         </div>
     );
 }

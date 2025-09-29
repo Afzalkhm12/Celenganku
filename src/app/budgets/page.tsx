@@ -6,13 +6,21 @@ import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { useAppToast } from '../../hooks/useAppToast';
 import { LoadingSpinner } from '../../components/ui/LoadingSpinner';
-import { Budget, Category } from '@prisma/client';
 
-// Tipe data yang aman untuk Client Component
-type SerializableCategoryWithBudget = Omit<Category, 'budgets'> & {
-    budgets: (Omit<Budget, 'amount'> & { amount: number })[];
+interface SerializableBudget {
+    id: string;
+    amount: number;
+    month: number;
+    year: number;
+}
+
+interface SerializableCategoryWithBudget {
+    id: string;
+    name: string;
+    budgets: SerializableBudget[];
     spent: number;
-};
+}
+
 
 const formatCurrency = (amount: number) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(amount);
 
@@ -20,7 +28,7 @@ export default function BudgetsPage() {
     const [budgetsData, setBudgetsData] = React.useState<SerializableCategoryWithBudget[]>([]);
     const [isLoading, setIsLoading] = React.useState(true);
     const toast = useAppToast();
-    const [date] = React.useState({
+    const [date, setDate] = React.useState({
         month: new Date().getMonth() + 1,
         year: new Date().getFullYear(),
     });
@@ -30,15 +38,16 @@ export default function BudgetsPage() {
         try {
             const response = await fetch(`/api/budgets?month=${month}&year=${year}`);
             if (!response.ok) throw new Error('Gagal memuat data anggaran.');
-            const data = await response.json();
+            const data: SerializableCategoryWithBudget[] = await response.json();
             setBudgetsData(data);
         } catch (err) {
+            // FIX: Use the 'err' variable to show a more specific error message.
             const error = err as Error;
             toast.error(error.message);
         } finally {
             setIsLoading(false);
         }
-    }, [toast]); // Dependensi toast stabil dan tidak akan menyebabkan loop
+    }, [toast]);
 
     React.useEffect(() => {
         fetchBudgets(date.month, date.year);
@@ -52,9 +61,10 @@ export default function BudgetsPage() {
                 body: JSON.stringify({ categoryId, amount, month: date.month, year: date.year }),
             });
             toast.success('Anggaran berhasil diperbarui!');
-            fetchBudgets(date.month, date.year); // Muat ulang data setelah berhasil
+            fetchBudgets(date.month, date.year);
         } catch (err) {
-            toast.error('Gagal memperbarui anggaran.');
+            const error = err as Error
+            toast.error(error.message || 'Gagal memperbarui anggaran.');
         }
     };
     
@@ -62,7 +72,19 @@ export default function BudgetsPage() {
 
     return (
         <div className="p-8">
-            <h1 className="text-3xl font-bold mb-8">Anggaran Bulan Ini</h1>
+            <div className="flex justify-between items-center mb-8">
+                <h1 className="text-3xl font-bold">Anggaran</h1>
+                <div className="flex items-center gap-2">
+                    <Input
+                        type="month"
+                        value={`${date.year}-${String(date.month).padStart(2, '0')}`}
+                        onChange={(e) => {
+                            const [year, month] = e.target.value.split('-');
+                            setDate({ year: parseInt(year), month: parseInt(month) });
+                        }}
+                    />
+                </div>
+            </div>
             {budgetsData.length === 0 ? (
                 <Card>
                     <CardContent className="p-6 text-center text-gray-500">

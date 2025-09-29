@@ -22,7 +22,11 @@ export async function GET(request: Request) {
     const transactionsSum = await prisma.transaction.groupBy({
       by: ['category_id'],
       where: {
-        category: { user_id: userId, type: 'EXPENSE' },
+        // --- FIX IS HERE ---
+        // Filter transactions by the user ID through the 'account' relation
+        account: { user_id: userId },
+        type: 'EXPENSE',
+        // --- END FIX ---
         transaction_date: { 
           gte: new Date(year, month - 1, 1), 
           lt: new Date(year, month, 1) 
@@ -33,7 +37,6 @@ export async function GET(request: Request) {
     
     const spentMap = new Map(transactionsSum.map(t => [t.category_id, t._sum.amount?.toNumber() ?? 0]));
 
-    // Convert Decimal to number before sending the response
     const result = categories.map(cat => ({
       ...cat,
       budgets: cat.budgets.map(b => ({ ...b, amount: b.amount.toNumber() })),
@@ -71,7 +74,6 @@ export async function POST(request: Request) {
       create: { user_id: userId, category_id: categoryId, amount, month, year },
     });
     
-    // Convert Decimal to number in the response
     const serializableBudget = {
       ...budget,
       amount: budget.amount.toNumber(),
