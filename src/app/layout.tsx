@@ -38,16 +38,17 @@ export default async function RootLayout({
         {showSidebar ? (
           // Layout with sidebar for authenticated users
           <div className="flex h-screen bg-gray-50">
-            <div className="flex-shrink-0">
-              <Sidebar />
-            </div>
-            <main className="flex-1 overflow-y-auto p-6">
-              {children}
+            <Sidebar />
+            <main className="flex-1 overflow-y-auto">
+              {/* Mobile padding to account for mobile menu button */}
+              <div className="p-4 md:p-6 pt-16 md:pt-6">
+                {children}
+              </div>
             </main>
           </div>
         ) : (
           // Full-width layout for public pages
-          <main className="min-h-screen">
+          <main className="min-h-screen bg-white">
             {children}
           </main>
         )}
