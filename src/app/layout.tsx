@@ -20,27 +20,37 @@ export default async function RootLayout({
 }) {
   const session = await auth();
   
-  // Perbaikan: Gunakan 'await' untuk menyelesaikan Promise sebelum memanggil .get()
+  // Get pathname from headers set by middleware
   const headersList = await headers();
   const pathname = headersList.get('x-next-pathname') || '';
 
+  // Define public pages that should not show sidebar
   const publicPages = ['/', '/login', '/register'];
   const isPublicPage = publicPages.includes(pathname);
 
+  // Show sidebar only if user is authenticated and not on public pages
   const showSidebar = !!session && !isPublicPage;
 
   return (
     <html lang="id">
       <body className={inter.className}>
         <Toaster position="top-center" reverseOrder={false} />
-        <div className="flex h-screen bg-gray-50">
-          {showSidebar && (
-            <div className="hidden md:flex">
+        {showSidebar ? (
+          // Layout with sidebar for authenticated users
+          <div className="flex h-screen bg-gray-50">
+            <div className="flex-shrink-0">
               <Sidebar />
             </div>
-          )}
-          <main className="flex-1 overflow-y-auto">{children}</main>
-        </div>
+            <main className="flex-1 overflow-y-auto p-6">
+              {children}
+            </main>
+          </div>
+        ) : (
+          // Full-width layout for public pages
+          <main className="min-h-screen">
+            {children}
+          </main>
+        )}
       </body>
     </html>
   );
