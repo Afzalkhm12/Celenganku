@@ -12,7 +12,16 @@ export async function GET() {
       include: { category: true, account: true },
       orderBy: { next_occurrence_date: 'asc' },
     });
-    return NextResponse.json(recurring);
+    // FIX: Map to serializable format to ensure Decimals are converted to numbers
+    const serializableRecurring = recurring.map(item => ({
+        ...item,
+        amount: item.amount.toNumber(),
+        account: {
+            ...item.account,
+            balance: item.account.balance.toNumber(),
+        }
+    }));
+    return NextResponse.json(serializableRecurring);
   } catch (error) {
     console.error('[RECURRING_GET]', error);
     return new NextResponse('Internal Server Error', { status: 500 });
@@ -25,15 +34,26 @@ export async function POST(request: Request) {
 
   try {
     const body = await request.json();
+    
+    // FIX: Pastikan amount diparse sebagai float/number
+    const amountAsDecimal = parseFloat(body.amount);
+    if (isNaN(amountAsDecimal) || amountAsDecimal <= 0) {
+        return new NextResponse('Invalid amount provided or amount is zero/negative', { status: 400 });
+    }
+
     const newRecurring = await prisma.recurringTransaction.create({
       data: {
         ...body,
+        amount: amountAsDecimal, 
         start_date: new Date(body.start_date),
         next_occurrence_date: new Date(body.start_date),
         end_date: body.end_date ? new Date(body.end_date) : null,
       },
     });
-    return NextResponse.json(newRecurring, { status: 201 });
+    return NextResponse.json({
+        ...newRecurring,
+        amount: newRecurring.amount.toNumber()
+    }, { status: 201 });
   } catch (error) {
     console.error('[RECURRING_POST]', error);
     return new NextResponse('Internal Server Error', { status: 500 });

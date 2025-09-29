@@ -4,10 +4,11 @@ import * as React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/Card';
 import { InsightCard } from '../ui/InsightCard';
 import { Button } from '../ui/Button';
-import { DollarSign, TrendingUp, TrendingDown, PlusCircle } from 'lucide-react';
+import { DollarSign, TrendingUp, TrendingDown, PlusCircle, Trash2 } from 'lucide-react'; 
 import TransactionFormModal from '../transactions/TransactionFormModal';
 import DashboardCharts from './DashboardCharts';
 import type { DashboardData } from '../../app/dashboard/page';
+import { useAppToast } from '../../hooks/useAppToast';
 
 const formatCurrency = (amount: number) => {
   return new Intl.NumberFormat('id-ID', {
@@ -19,10 +20,31 @@ const formatCurrency = (amount: number) => {
 
 export default function DashboardClient({ initialData }: { initialData: DashboardData }) {
   const [isModalOpen, setIsModalOpen] = React.useState(false);
+  const toast = useAppToast();
 
   const refreshData = () => {
     window.location.reload();
   };
+
+    const handleDeleteTransaction = async (id: string, description: string) => {
+        if (!window.confirm(`Anda yakin ingin menghapus transaksi "${description}"? Tindakan ini akan membalikkan perubahan saldo akun.`)) return;
+        
+        try {
+            const response = await fetch(`/api/transactions/${id}`, {
+                method: 'DELETE',
+            });
+
+            if (response.ok) {
+                toast.success('Transaksi berhasil dihapus.');
+                refreshData(); 
+            } else {
+                const errorData = await response.json();
+                toast.error(errorData.error || 'Gagal menghapus transaksi.');
+            }
+        } catch (error) {
+            toast.error('Terjadi kesalahan saat menghapus transaksi.');
+        }
+    };
 
   return (
     <div className="min-h-screen bg-gray-50 p-4 sm:p-6 lg:p-8">
@@ -97,14 +119,23 @@ export default function DashboardClient({ initialData }: { initialData: Dashboar
               <CardContent>
                 <div className="space-y-4">
                   {initialData.recentTransactions.length > 0 ? initialData.recentTransactions.map((tx) => (
-                    <div key={tx.id} className="flex justify-between items-center">
-                      <div>
-                        <p className="font-medium">{tx.category.name}</p>
-                        <p className="text-sm text-gray-500">{new Date(tx.transaction_date).toLocaleDateString('id-ID', { day: 'numeric', month: 'long' })}</p>
+                    <div key={tx.id} className="flex justify-between items-center group hover:bg-gray-50 p-2 rounded-lg -m-2 transition">
+                      <div className="flex-1 min-w-0 pr-2">
+                        <p className="font-medium truncate">{tx.description || tx.category.name}</p>
+                        <p className="text-xs text-gray-500">{tx.account.name} &bull; {new Date(tx.transaction_date).toLocaleDateString('id-ID', { day: 'numeric', month: 'long' })}</p>
                       </div>
-                      <p className={`font-semibold ${tx.type === 'INCOME' ? 'text-green-600' : 'text-red-600'}`}>
-                        {tx.type === 'INCOME' ? '+' : '-'} {formatCurrency(Number(tx.amount))}
-                      </p>
+                      <div className="flex items-center space-x-2 ml-4">
+                        <p className={`font-semibold text-sm ${tx.type === 'INCOME' ? 'text-green-600' : 'text-red-600'} flex-shrink-0`}>
+                            {tx.type === 'INCOME' ? '+' : '-'} {formatCurrency(Number(tx.amount))}
+                        </p>
+                        <button
+                            onClick={() => handleDeleteTransaction(tx.id, tx.description || tx.category.name)}
+                            className="text-gray-400 hover:text-red-600 opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded"
+                            aria-label={`Hapus transaksi ${tx.description || tx.category.name}`}
+                        >
+                            <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
                     </div>
                   )) : (
                     <p className="text-sm text-gray-500 text-center py-4">Belum ada transaksi bulan ini.</p>

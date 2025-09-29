@@ -3,6 +3,7 @@
 import * as React from 'react';
 import { Modal } from '../../components/ui/Modal';
 import { Input } from '../../components/ui/Input';
+import { Select, SelectOption } from '../../components/ui/Select'; 
 import { Button } from '../../components/ui/Button';
 import { useAppToast } from '../../hooks/useAppToast';
 import { LoadingSpinner } from '../../components/ui/LoadingSpinner';
@@ -17,13 +18,19 @@ interface RecurringTransactionModalProps {
   categories: Category[];
 }
 
+const frequencyOptions: SelectOption[] = [
+    { value: 'DAILY', label: 'Harian' },
+    { value: 'WEEKLY', label: 'Mingguan' },
+    { value: 'MONTHLY', label: 'Bulanan' },
+];
+
 export function RecurringTransactionModal({ isOpen, onClose, onSuccess, accounts, categories }: RecurringTransactionModalProps) {
-    const [type, setType] = React.useState('EXPENSE');
+    const [type, setType] = React.useState<'EXPENSE' | 'INCOME'>('EXPENSE');
     const [amount, setAmount] = React.useState('');
     const [categoryId, setCategoryId] = React.useState('');
     const [accountId, setAccountId] = React.useState('');
     const [description, setDescription] = React.useState('');
-    const [frequency, setFrequency] = React.useState('MONTHLY');
+    const [frequency, setFrequency] = React.useState(frequencyOptions[2].value);
     const [startDate, setStartDate] = React.useState(new Date().toISOString().split('T')[0]);
     const [endDate, setEndDate] = React.useState('');
     const [isLoading, setIsLoading] = React.useState(false);
@@ -31,31 +38,61 @@ export function RecurringTransactionModal({ isOpen, onClose, onSuccess, accounts
 
     const filteredCategories = React.useMemo(() => categories.filter(c => c.type === type), [categories, type]);
 
+    const categoryOptions: SelectOption[] = filteredCategories.map(cat => ({ value: cat.id, label: cat.name }));
+    const accountOptions: SelectOption[] = accounts.map(acc => ({ value: acc.id, label: acc.name }));
+
+    // FIX: Reset form state when modal opens/type changes
     React.useEffect(() => {
         if (isOpen) {
-            if (filteredCategories.length > 0) {
-                setCategoryId(filteredCategories[0].id);
+            // Set default category ID
+            if (categoryOptions.length > 0) {
+                setCategoryId(categoryOptions[0].value);
             } else {
-                setCategoryId('');
+                setCategoryId(''); 
             }
 
-            if (accounts.length > 0 && !accountId) {
-                setAccountId(accounts[0].id);
+            // Set default account ID
+            if (accountOptions.length > 0 && !accountId) {
+                setAccountId(accountOptions[0].value);
             }
+            // Reset amount, description, dates when switching type or opening modal
+            setAmount('');
+            setDescription('');
+            setFrequency(frequencyOptions[2].value);
+            setStartDate(new Date().toISOString().split('T')[0]);
+            setEndDate('');
         }
-    }, [type, isOpen, accounts, filteredCategories, accountId]);
+        // Dependency array: includes all necessary external values
+    }, [type, isOpen, categoryOptions.length, accountOptions.length, accountId]);
 
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setIsLoading(true);
 
+        const numericAmount = parseFloat(amount);
+        if (isNaN(numericAmount) || numericAmount <= 0) {
+            toast.error('Jumlah harus angka positif.');
+            setIsLoading(false);
+            return;
+        }
+        if (!categoryId) {
+             toast.error('Kategori harus dipilih.');
+            setIsLoading(false);
+            return;
+        }
+        if (!accountId) {
+             toast.error('Akun harus dipilih.');
+            setIsLoading(false);
+            return;
+        }
+
         try {
             const response = await fetch('/api/recurring', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                  amount: parseFloat(amount),
+                  amount: numericAmount, 
                   type,
                   categoryId,
                   accountId,
@@ -68,6 +105,13 @@ export function RecurringTransactionModal({ isOpen, onClose, onSuccess, accounts
 
               if (response.ok) {
                 toast.success('Transaksi rutin berhasil ditambahkan!');
+                // Reset form state on success
+                setAmount('');
+                setDescription('');
+                setFrequency(frequencyOptions[2].value);
+                setStartDate(new Date().toISOString().split('T')[0]);
+                setEndDate('');
+                
                 onSuccess();
               } else {
                 const errorData = await response.text();
@@ -101,73 +145,79 @@ export function RecurringTransactionModal({ isOpen, onClose, onSuccess, accounts
               </button>
             </div>
 
-            <div>
-              <label htmlFor="amount" className="block text-sm font-medium text-gray-700 mb-1">
-                Jumlah
-              </label>
-              <Input id="amount" type="number" value={amount} onChange={e => setAmount(e.target.value)} placeholder="0" required />
-            </div>
+            <Input 
+                label="Jumlah"
+                id="amount" 
+                type="number" 
+                value={amount} 
+                onChange={e => setAmount(e.target.value)} 
+                placeholder="0" 
+                required 
+                min="0.01"
+                step="0.01"
+            />
 
-            <div>
-                <label htmlFor="category" className="block text-sm font-medium text-gray-700 mb-1">
-                  Kategori
-                </label>
-                <select
-                  id="category"
-                  value={categoryId}
-                  onChange={e => setCategoryId(e.target.value)}
-                  required
-                  className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
-                >
-                    {filteredCategories.map(cat => <option key={cat.id} value={cat.id}>{cat.name}</option>)}
-                </select>
-            </div>
+            <Select 
+                label={`Kategori ${type === 'INCOME' ? 'Pemasukan' : 'Pengeluaran'}`}
+                id="category"
+                value={categoryId}
+                onChange={e => setCategoryId(e.target.value)}
+                options={categoryOptions}
+                placeholder={categoryOptions.length === 0 ? `Tidak ada kategori ${type === 'INCOME' ? 'Pemasukan' : 'Pengeluaran'}` : "Pilih Kategori"}
+                required
+                disabled={categoryOptions.length === 0}
+            />
+            
+            <Select 
+                label={type === 'INCOME' ? 'Masuk ke Akun' : 'Diambil dari Akun'}
+                id="account"
+                value={accountId}
+                onChange={e => setAccountId(e.target.value)}
+                options={accountOptions}
+                placeholder={accountOptions.length === 0 ? "Anda belum memiliki akun." : "Pilih Akun"}
+                required
+                disabled={accountOptions.length === 0}
+            />
 
-            <div>
-                <label htmlFor="account" className="block text-sm font-medium text-gray-700 mb-1">
-                  Akun
-                </label>
-                 <select
-                   id="account"
-                   value={accountId}
-                   onChange={e => setAccountId(e.target.value)}
-                   required
-                   className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
-                 >
-                    {accounts.map(acc => <option key={acc.id} value={acc.id}>{acc.name}</option>)}
-                </select>
-            </div>
+            <Input 
+                label="Deskripsi (Opsional)"
+                id="description" 
+                type="text" 
+                value={description} 
+                onChange={e => setDescription(e.target.value)} 
+                placeholder="Contoh: Gaji Bulanan" 
+            />
+            
+            <Select
+                label="Frekuensi"
+                id="frequency"
+                value={frequency}
+                onChange={(e) => setFrequency(e.target.value)}
+                options={frequencyOptions}
+                required
+            />
 
-            <div>
-                <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">Deskripsi (Opsional)</label>
-                <Input id="description" type="text" value={description} onChange={e => setDescription(e.target.value)} placeholder="Contoh: Gaji Bulanan" />
-            </div>
-            <div>
-                <label htmlFor="frequency" className="block text-sm font-medium text-gray-700 mb-1">Frekuensi</label>
-                <select
-                    id="frequency"
-                    value={frequency}
-                    onChange={(e) => setFrequency(e.target.value)}
-                    className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
-                >
-                    <option value="DAILY">Harian</option>
-                    <option value="WEEKLY">Mingguan</option>
-                    <option value="MONTHLY">Bulanan</option>
-                </select>
-            </div>
-            <div>
-                <label htmlFor="start_date" className="block text-sm font-medium text-gray-700 mb-1">Tanggal Mulai</label>
-                <Input id="start_date" type="date" value={startDate} onChange={e => setStartDate(e.target.value)} required />
-            </div>
-            <div>
-                <label htmlFor="end_date" className="block text-sm font-medium text-gray-700 mb-1">Tanggal Berakhir (Opsional)</label>
-                <Input id="end_date" type="date" value={endDate} onChange={e => setEndDate(e.target.value)} />
-            </div>
+            <Input 
+                label="Tanggal Mulai"
+                id="start_date" 
+                type="date" 
+                value={startDate} 
+                onChange={e => setStartDate(e.target.value)} 
+                required 
+            />
+            
+            <Input 
+                label="Tanggal Berakhir (Opsional)"
+                id="end_date" 
+                type="date" 
+                value={endDate} 
+                onChange={e => setEndDate(e.target.value)} 
+            />
 
 
             <div className="flex justify-end pt-4">
               <Button type="button" variant="ghost" onClick={onClose} disabled={isLoading}>Batal</Button>
-              <Button type="submit" className="ml-2" disabled={isLoading}>
+              <Button type="submit" className="ml-2" disabled={isLoading || !categoryId || !accountId}>
                 {isLoading ? <LoadingSpinner size="sm" color="light" /> : 'Simpan'}
               </Button>
             </div>

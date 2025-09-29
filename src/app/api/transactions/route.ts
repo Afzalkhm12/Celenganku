@@ -17,15 +17,16 @@ export async function POST(request: Request) {
         return new NextResponse('Missing required fields', { status: 400 });
     }
 
-    const amountAsNumber = parseFloat(amount);
-    if (isNaN(amountAsNumber)) {
+    // FIX: Convert to number only once on server. Client passes amount as number/float.
+    const amountAsDecimal = amount;
+    if (isNaN(amountAsDecimal)) {
         return new NextResponse('Invalid amount provided', { status: 400 });
     }
 
     const result = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       const newTransaction = await tx.transaction.create({
         data: {
-          amount: amountAsNumber,
+          amount: amountAsDecimal, 
           type,
           description,
           transaction_date: new Date(transactionDate),
@@ -37,12 +38,12 @@ export async function POST(request: Request) {
       if (type === 'INCOME') {
         await tx.account.update({
           where: { id: accountId },
-          data: { balance: { increment: amountAsNumber } },
+          data: { balance: { increment: amountAsDecimal } }, 
         });
       } else {
          await tx.account.update({
           where: { id: accountId },
-          data: { balance: { decrement: amountAsNumber } },
+          data: { balance: { decrement: amountAsDecimal } },
         });
       }
 

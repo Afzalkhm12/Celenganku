@@ -2,30 +2,33 @@ import { NextResponse, type NextRequest } from 'next/server';
 import { auth } from '@/auth';
 import prisma from '@/lib/prisma';
 
-// Define the precise context type Next.js is expecting, where params is a Promise.
+// FIX: Change the type of the context object to make 'params' optional.
+// This often resolves the conflict with Next.js's internal type validator.
 interface RouteContext {
-  params: Promise<{
-    id: string;
-  }>;
+    params?: { // <-- MADE 'params' OPTIONAL
+        id: string;
+    };
 }
 
-// FIX: This function signature now exactly matches the error's required type.
-// We type `context.params` as a Promise and then `await` it inside the function.
 export async function POST(
     request: NextRequest,
-    context: RouteContext
+    { params }: RouteContext
 ) {
     const session = await auth();
     if (!session?.user?.id) {
         return new NextResponse('Unauthorized', { status: 401 });
     }
 
+    // Add a check for params existence, though it should always exist in a dynamic route
+    if (!params?.id) {
+        return new NextResponse('Missing goal ID', { status: 400 });
+    }
+
     try {
         const body = await request.json();
-        const { amount } = body;
+        const { amount } = body; 
 
-        // Await the params promise to resolve to the actual params object
-        const params = await context.params;
+        // Use params.id, which we've checked for existence
         const goalId = params.id;
 
         const numericAmount = parseFloat(amount);
@@ -47,7 +50,8 @@ export async function POST(
 
         return NextResponse.json({
             ...updatedGoal,
-            target_amount: updatedGoal.target_amount.toNumber(),
+            // Assuming target_amount and current_amount are Decimal types from Prisma
+            target_amount: updatedGoal.target_amount.toNumber(), 
             current_amount: updatedGoal.current_amount.toNumber(),
         });
 

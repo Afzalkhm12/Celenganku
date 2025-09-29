@@ -29,6 +29,7 @@ export default async function RecurringPage() {
         prisma.category.findMany({ where: { user_id: session.user.id } }),
     ]);
 
+    // FIX: Pastikan konversi Decimal ke number dilakukan dengan aman
     const serializableRecurring: SerializableRecurringTransaction[] = recurringData.map(item => ({
         ...item,
         amount: item.amount.toNumber(),

@@ -7,7 +7,7 @@ import { Input } from '../../components/ui/Input';
 import { Modal } from '../../components/ui/Modal';
 import { InsightCard } from '../../components/ui/InsightCard';
 import { useAppToast } from '../../hooks/useAppToast';
-import { PlusCircle } from 'lucide-react';
+import { PlusCircle, Edit, Trash2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { type SerializableFinancialGoal } from './page';
 import { AddFundsModal } from './AddFundsModal';
@@ -27,7 +27,6 @@ interface GoalsClientProps {
 }
 
 export default function GoalsClient({ initialGoals, initialTips }: GoalsClientProps) {
-    // FIX: Removed unused 'setGoals' and 'setTips' as data is refreshed via router
     const goals = initialGoals;
     const tips = initialTips;
     
@@ -47,16 +46,18 @@ export default function GoalsClient({ initialGoals, initialTips }: GoalsClientPr
             const response = await fetch('/api/goals', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ name, target_amount: parseFloat(targetAmount), target_date: targetDate }),
+                body: JSON.stringify({ name, target_amount: parseFloat(targetAmount), target_date: targetDate || null }),
             });
-            if (!response.ok) throw new Error("Gagal membuat celengan.");
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || "Gagal membuat celengan.");
+            }
             
             toast.success('Celengan baru berhasil dibuat!');
             setIsModalOpen(false);
             setName(''); setTargetAmount(''); setTargetDate('');
             router.refresh();
         } catch (e) {
-            // FIX: Use the error variable
             const message = e instanceof Error ? e.message : 'Gagal membuat celengan.';
             toast.error(message);
         }
@@ -65,6 +66,27 @@ export default function GoalsClient({ initialGoals, initialTips }: GoalsClientPr
     const handleAddFundsClick = (goal: SerializableFinancialGoal) => {
         setSelectedGoal(goal);
         setIsAddFundsModalOpen(true);
+    };
+
+    const handleDeleteGoal = async (id: string, name: string) => {
+        if (!window.confirm(`Anda yakin ingin menghapus Celengan "${name}"? Seluruh progres tabungan ini akan hilang.`)) return;
+        
+        try {
+            const response = await fetch(`/api/goals/${id}`, {
+                method: 'DELETE',
+            });
+
+            if (response.status === 204) {
+                toast.success('Celengan berhasil dihapus!');
+                router.refresh(); 
+            } else {
+                const errorData = await response.json();
+                throw new Error(errorData.error || 'Gagal menghapus celengan.');
+            }
+        } catch (e) {
+            const message = e instanceof Error ? e.message : 'Gagal menghapus celengan.';
+            toast.error(message);
+        }
     };
 
     const getSmartTip = React.useMemo(() => {
@@ -103,8 +125,25 @@ export default function GoalsClient({ initialGoals, initialTips }: GoalsClientPr
                         return (
                             <Card key={goal.id}>
                                 <CardHeader>
-                                    <CardTitle>{goal.name}</CardTitle>
-                                    <CardDescription>Target: {formatCurrency(goal.target_amount)}</CardDescription>
+                                    <div className="flex justify-between items-start">
+                                        <div>
+                                            <CardTitle>{goal.name}</CardTitle>
+                                            <CardDescription>Target: {formatCurrency(goal.target_amount)} {goal.target_date ? `(hingga ${new Date(goal.target_date).toLocaleDateString('id-ID')})` : ''}</CardDescription>
+                                        </div>
+                                        <div className="flex space-x-1">
+                                            {/* Note: Edit button functionality is not implemented in PUT, but the placeholder is here */}
+                                            {/* <Button size="icon" variant="ghost" onClick={() => {/* handleEditGoal(goal) } ><Edit className="h-4 w-4" /></Button> */}
+                                            <Button
+                                                size="sm"
+                                                variant="ghost"
+                                                onClick={() => handleDeleteGoal(goal.id, goal.name)}
+                                                className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                                                title="Hapus Celengan"
+                                            >
+                                                <Trash2 className="h-4 w-4" />
+                                            </Button>
+                                        </div>
+                                    </div>
                                 </CardHeader>
                                 <CardContent className="space-y-4">
                                     <div className="text-center font-bold text-lg text-blue-600">{formatCurrency(goal.current_amount)}</div>
@@ -123,15 +162,15 @@ export default function GoalsClient({ initialGoals, initialTips }: GoalsClientPr
              <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title="Buat Celengan Baru">
                 <form onSubmit={handleCreateGoal} className="space-y-4">
                     <div>
-                        <label htmlFor="goalName">Nama Tujuan</label>
+                        <label htmlFor="goalName" className="block text-sm font-medium text-gray-700 mb-1">Nama Tujuan</label>
                         <Input id="goalName" value={name} onChange={e => setName(e.target.value)} placeholder="Dana Darurat, Rumah Impian..." required />
                     </div>
                      <div>
-                        <label htmlFor="targetAmount">Jumlah Target</label>
+                        <label htmlFor="targetAmount" className="block text-sm font-medium text-gray-700 mb-1">Jumlah Target</label>
                         <Input id="targetAmount" type="number" value={targetAmount} onChange={e => setTargetAmount(e.target.value)} placeholder="10000000" required />
                     </div>
                      <div>
-                        <label htmlFor="targetDate">Tanggal Target</label>
+                        <label htmlFor="targetDate" className="block text-sm font-medium text-gray-700 mb-1">Tanggal Target (Opsional)</label>
                         <Input id="targetDate" type="date" value={targetDate} onChange={e => setTargetDate(e.target.value)} />
                     </div>
                     <div className="flex justify-end pt-2">
